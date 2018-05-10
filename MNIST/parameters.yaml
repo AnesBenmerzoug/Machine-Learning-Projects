@@ -1,10 +1,13 @@
 # Project Parameters
 
 # Model Parameters
-image_size: [28, 28]
-hidden_size: 16
-output_size: 10
-window_size: [1, 1]
+first_conv_in: 1
+first_conv_out: 5
+first_conv_kernel: 5
+second_conv_out: 50
+second_conv_kernel: 5
+first_fc_output: 100
+second_fc_output: 10
 batch_size: 64
 savedModelDir: './trained_models/'
 testModelPath: './trained_models/'

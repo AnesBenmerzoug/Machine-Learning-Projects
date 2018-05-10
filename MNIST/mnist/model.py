@@ -1,5 +1,5 @@
 import torch
-from torch.nn import Module, Linear, LSTM
+from torch.nn import Module, Linear, Conv2d
 import torch.nn.functional as F
 
 
@@ -11,38 +11,43 @@ class MNIST_2DLSTM(Module):
         hidden_size:
         output_size:
     """
-    def __init__(self, image_size, window_size, hidden_size, output_size):
+    def __init__(self, params):
         super(MNIST_2DLSTM, self).__init__()
         # Module Parameters
-        image_height = image_size[0]
-        image_width = image_size[1]
-        # LSTM Layers
-        self.horizontal_layer = LSTM(input_size=image_height, hidden_size=hidden_size,
-                                     bidirectional=True, batch_first=True, bias=True)
-        self.vertical_layer = LSTM(input_size=image_width, hidden_size=hidden_size,
-                                   bidirectional=True, batch_first=True, bias=True)
-        # Output Layer
-        self.output_layer = Linear(in_features=4 * hidden_size * image_height,
-                                   out_features=output_size)
+        self.params = params
+        # Convolutional Layers
+        self.first_conv_layer = Conv2d(in_channels=self.params.first_conv_in,
+                                       out_channels=self.params.first_conv_out,
+                                       kernel_size=self.params.first_conv_kernel,
+                                       stride=2)
+        self.second_conv_layer = Conv2d(in_channels=self.params.first_conv_out,
+                                        out_channels=self.params.second_conv_out,
+                                        kernel_size=self.params.second_conv_kernel,
+                                        stride=2)
+        # Fully Connected Layers
+        self.first_fc_layer = Linear(in_features=self.params.second_conv_out * 5 * 5,
+                                     out_features=self.params.first_fc_output)
+        self.output_fc_layer = Linear(in_features=self.params.first_fc_output,
+                                      out_features=self.params.second_fc_output)
 
         # Initialize Parameters
         self.reset_parameters()
 
     def forward(self, input_image):
-        # Horizontal LSTM Layer
-        output_horizontal, _ = self.horizontal_layer(input_image)
-        # Vertical LSTM Layer
-        output_vertical, _ = self.vertical_layer(input_image.transpose(1, 2))
-        # Concatenate the outputs of both layers
-        output = torch.cat((output_horizontal, output_vertical), dim=2)
+        # First Convolutional Layer
+        output = F.relu(self.first_conv_layer(input_image))
+        # Second Convolutional Layer
+        output = F.relu(self.second_conv_layer(output))
         # Change the view to process all outputs at once
         output = output.view(output.size(0), -1)
+        # Fist Fully Connected Layer
+        output = F.relu(self.first_fc_layer(output))
         if self.training is True:
             # Linear + LogSoftmax
-            output = F.log_softmax(self.output_layer(output), dim=1)
+            output = F.log_softmax(self.output_fc_layer(output), dim=1)
         else:
             # Linear + Softmax
-            output = F.softmax(self.output_layer(output), dim=1)
+            output = F.softmax(self.output_fc_layer(output), dim=1)
         return output
 
     def reset_parameters(self):
@@ -59,8 +64,7 @@ class MNIST_2DLSTM(Module):
     @classmethod
     def load_model(cls, package, useGPU=False):
         params = package['params']
-        model = cls(image_size=params['image_size'], window_size=params['window_size'],
-                    hidden_size=params['hidden_size'], output_size=params['output_size'])
+        model = cls(params)
         model.load_state_dict(package['state_dict'])
         # Replace NaN parameters with random values
         for parameter in model.parameters():

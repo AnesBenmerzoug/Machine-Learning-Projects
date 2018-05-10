@@ -45,8 +45,7 @@ class MNISTTrainer(object):
         # Initialize model
         if self.params.resumeTraining is False:
             print("Training New Model")
-            self.model = MNIST_2DLSTM(image_size=self.params.image_size, window_size=self.params.window_size,
-                                      hidden_size=self.params.hidden_size, output_size=self.params.output_size)
+            self.model = MNIST_2DLSTM(self.params)
         else:
             print("Resuming Training")
             self.load_model(self.useGPU)
