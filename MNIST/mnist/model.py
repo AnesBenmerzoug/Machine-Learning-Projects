@@ -4,12 +4,9 @@ import torch.nn.functional as F
 
 
 class MNIST_2DLSTM(Module):
-    """
-    Args:
-        image_size:
-        window_size:
-        hidden_size:
-        output_size:
+    r"""
+    A Deep Neural Network implementation based on the network described in:
+    'Multi-column Deep Neural Networks for Image Classification'
     """
     def __init__(self, params):
         super(MNIST_2DLSTM, self).__init__()
@@ -18,14 +15,12 @@ class MNIST_2DLSTM(Module):
         # Convolutional Layers
         self.first_conv_layer = Conv2d(in_channels=self.params.first_conv_in,
                                        out_channels=self.params.first_conv_out,
-                                       kernel_size=self.params.first_conv_kernel,
-                                       stride=2)
+                                       kernel_size=self.params.first_conv_kernel)
         self.second_conv_layer = Conv2d(in_channels=self.params.first_conv_out,
                                         out_channels=self.params.second_conv_out,
-                                        kernel_size=self.params.second_conv_kernel,
-                                        stride=2)
+                                        kernel_size=self.params.second_conv_kernel,)
         # Fully Connected Layers
-        self.first_fc_layer = Linear(in_features=self.params.second_conv_out * 5 * 5,
+        self.first_fc_layer = Linear(in_features=self.params.second_conv_out * 3 * 3,
                                      out_features=self.params.first_fc_output)
         self.output_fc_layer = Linear(in_features=self.params.first_fc_output,
                                       out_features=self.params.second_fc_output)
@@ -35,13 +30,13 @@ class MNIST_2DLSTM(Module):
 
     def forward(self, input_image):
         # First Convolutional Layer
-        output = F.relu(self.first_conv_layer(input_image))
+        output = F.max_pool2d(F.tanh(self.first_conv_layer(input_image)), (2, 2))
         # Second Convolutional Layer
-        output = F.relu(self.second_conv_layer(output))
+        output = F.max_pool2d(F.tanh(self.second_conv_layer(output)), (3, 3))
         # Change the view to process all outputs at once
         output = output.view(output.size(0), -1)
         # Fist Fully Connected Layer
-        output = F.relu(self.first_fc_layer(output))
+        output = F.tanh(self.first_fc_layer(output))
         if self.training is True:
             # Linear + LogSoftmax
             output = F.log_softmax(self.output_fc_layer(output), dim=1)
