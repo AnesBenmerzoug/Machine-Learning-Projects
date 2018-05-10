@@ -9,7 +9,6 @@ from torchvision.datasets import MNIST
 from torchvision.transforms import transforms
 from mnist.imageTransform import ImageTransform
 from mnist.model import MNIST_2DLSTM
-from mnist.loss import Entropy
 from mnist.optimizer import SVRG
 from torch.nn.utils import clip_grad_norm
 from collections import namedtuple
@@ -86,9 +85,6 @@ class MNISTTrainer(object):
         # Criterion
         self.criterion = NLLLoss()
 
-        # Entropy for penalizing the Network
-        self.entropy = Entropy()
-
     def snapshot_closure(self):
         def closure(data, target):
             # Wrap it in Variables
@@ -157,8 +153,7 @@ class MNISTTrainer(object):
             # Main Model Forward Step
             output = self.model(inputs)
             # Loss Computation
-            entropy = self.entropy(output)
-            loss = self.criterion(output, labels) - 0.2 * entropy
+            loss = self.criterion(output, labels)
             inf = float("inf")
             if loss.data[0] == inf or loss.data[0] == -inf:
                 print("Warning, received inf loss. Skipping it")

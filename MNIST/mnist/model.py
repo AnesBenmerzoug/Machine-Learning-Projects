@@ -24,7 +24,6 @@ class MNIST_2DLSTM(Module):
                                      out_features=self.params.first_fc_output)
         self.output_fc_layer = Linear(in_features=self.params.first_fc_output,
                                       out_features=self.params.second_fc_output)
-
         # Initialize Parameters
         self.reset_parameters()
 
