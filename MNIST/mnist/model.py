@@ -22,7 +22,7 @@ class MNIST_2DLSTM(Module):
         self.vertical_layer = LSTM(input_size=image_width, hidden_size=hidden_size,
                                    bidirectional=True, batch_first=True, bias=True)
         # Output Layer
-        self.output_layer = Linear(in_features=2 * hidden_size,
+        self.output_layer = Linear(in_features=4 * hidden_size * image_height,
                                    out_features=output_size)
 
         # Initialize Parameters
