@@ -3,6 +3,7 @@
 # Model Parameters
 image_size: [28, 28]
 hidden_size: 16
+num_layers: 1
 output_size: 10
 batch_size: 1
 savedModelDir: './trained_models/'

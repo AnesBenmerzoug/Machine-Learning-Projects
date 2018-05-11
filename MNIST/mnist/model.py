@@ -3,24 +3,26 @@ from torch.nn import Module, Linear, LSTM
 import torch.nn.functional as F
 
 
-class MNIST_2DLSTM(Module):
+class MNIST_Network(Module):
     r"""
-    A Deep Neural Network implementation based on the network described in:
-    'Multi-column Deep Neural Networks for Image Classification'
+    A Deep Neural Network implementation that a vertical and a horizontal BLSTM layers to scan the image
+    and a fully connected layer that will use their outputs to generate the class conditional probability
+    using a softmax output
     """
     def __init__(self, params):
-        super(MNIST_2DLSTM, self).__init__()
+        super(MNIST_Network, self).__init__()
         # Module Parameters
         self.params = params
         image_height = self.params.image_size[0]
         image_width = self.params.image_size[1]
         hidden_size = self.params.hidden_size
         output_size = self.params.output_size
+        num_layers = self.params.num_layers
         # LSTM Layers
         self.horizontal_layer = LSTM(input_size=image_height, hidden_size=hidden_size,
-                                     num_layers=2, bidirectional=True, batch_first=True, bias=True)
+                                     num_layers=num_layers, bidirectional=True, batch_first=True, bias=True)
         self.vertical_layer = LSTM(input_size=image_width, hidden_size=hidden_size,
-                                   num_layers=2, bidirectional=True, batch_first=True, bias=True)
+                                   num_layers=num_layers, bidirectional=True, batch_first=True, bias=True)
         # Output Layer
         self.output_layer = Linear(in_features=4 * hidden_size * image_height,
                                    out_features=output_size)

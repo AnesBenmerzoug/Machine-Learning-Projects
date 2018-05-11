@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader
 from torchvision.datasets import MNIST
 from torchvision.transforms import transforms
 from mnist.imageTransform import ImageTransform
-from mnist.model import MNIST_2DLSTM
+from mnist.model import MNIST_Network
 from mnist.utils import imgshow
 import random
 
@@ -29,7 +29,7 @@ class MNISTTester(object):
         self.useGPU = self.params.useGPU and torch.cuda.is_available()
 
         # Load Trained Model
-        self.model = MNIST_2DLSTM.load_model(self.params.testModelPath)
+        self.model = MNIST_Network.load_model(self.params.testModelPath)
 
         print(self.model)
 

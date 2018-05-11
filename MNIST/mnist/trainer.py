@@ -8,7 +8,7 @@ from torch.utils.data.sampler import RandomSampler
 from torchvision.datasets import MNIST
 from torchvision.transforms import transforms
 from mnist.imageTransform import ImageTransform
-from mnist.model import MNIST_2DLSTM
+from mnist.model import MNIST_Network
 from mnist.optimizer import SVRG
 from mnist.loss import Entropy
 from torch.nn.utils import clip_grad_norm
@@ -45,7 +45,7 @@ class MNISTTrainer(object):
         # Initialize model
         if self.params.resumeTraining is False:
             print("Training New Model")
-            self.model = MNIST_2DLSTM(self.params)
+            self.model = MNIST_Network(self.params)
         else:
             print("Resuming Training")
             self.load_model(self.useGPU)
@@ -214,7 +214,7 @@ class MNISTTrainer(object):
 
     def load_model(self, useGPU=False):
         package = torch.load(self.params.trainedModelPath, map_location=lambda storage, loc: storage)
-        self.model = MNIST_2DLSTM.load_model(package, useGPU)
+        self.model = MNIST_Network.load_model(package, useGPU)
         parameters = package['params']
         self.params = namedtuple('Parameters', (parameters.keys()))(*parameters.values())
         self.optimizer = self.optimizer_select()

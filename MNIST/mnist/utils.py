@@ -10,7 +10,7 @@ def imgshow(img):
 
 
 def plotlosses(losses, title='', xlabel='', ylabel=''):
-    epochs = np.arange(losses.size, dtype=np.uint8) + 1
+    epochs = np.arange(losses.size) + 1
     plt.plot(epochs, losses)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
@@ -19,7 +19,7 @@ def plotlosses(losses, title='', xlabel='', ylabel=''):
 
 
 def plotaccuracy(accuracy, classes, title='', xlabel='', ylabel=''):
-    indices = np.arange(len(classes), dtype=np.uint8)
+    indices = np.arange(len(classes))
     width = 0.35
     plt.bar(indices, accuracy, width)
     plt.xlabel(xlabel)
