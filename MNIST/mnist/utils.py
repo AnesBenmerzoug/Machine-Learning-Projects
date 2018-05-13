@@ -21,7 +21,10 @@ def plotlosses(losses, title='', xlabel='', ylabel=''):
 def plotaccuracy(accuracy, classes, title='', xlabel='', ylabel=''):
     indices = np.arange(len(classes))
     width = 0.35
-    plt.bar(indices, accuracy, width)
+    bar = plt.bar(indices, accuracy, width)
+    for idx, rect in enumerate(bar):
+        height = rect.get_height()
+        plt.text(rect.get_x() + rect.get_width() / 2.0, height, '{:.2f}'.format(accuracy[idx]), ha='center', va='bottom')
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.title(title)

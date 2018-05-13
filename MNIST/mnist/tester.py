@@ -6,6 +6,7 @@ from torchvision.transforms import transforms
 from mnist.imageTransform import ImageTransform
 from mnist.model import MNIST_Network
 from mnist.utils import imgshow
+from collections import namedtuple
 import random
 
 
@@ -29,7 +30,7 @@ class MNISTTester(object):
         self.useGPU = self.params.useGPU and torch.cuda.is_available()
 
         # Load Trained Model
-        self.model = MNIST_Network.load_model(self.params.testModelPath)
+        self.load_model()
 
         print(self.model)
 
@@ -92,3 +93,10 @@ class MNISTTester(object):
         outputs = self.model(images)
         _, predicted = torch.max(outputs.data, 1)
         print('Predicted:     ', ' '.join('%5s' % self.classes[predicted[j]] for j in range(int(images.size(0)))))
+
+    def load_model(self, useGPU=False):
+        package = torch.load(self.params.testModelPath, map_location=lambda storage, loc: storage)
+        self.model = MNIST_Network.load_model(package, useGPU)
+        parameters = package['params']
+        self.params = namedtuple('Parameters', (parameters.keys()))(*parameters.values())
+

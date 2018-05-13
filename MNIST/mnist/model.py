@@ -1,6 +1,7 @@
 import torch
 from torch.nn import Module, Linear, LSTM
 import torch.nn.functional as F
+from collections import namedtuple
 
 
 class MNIST_Network(Module):
@@ -13,16 +14,16 @@ class MNIST_Network(Module):
         super(MNIST_Network, self).__init__()
         # Module Parameters
         self.params = params
+        print(params)
         image_height = self.params.image_size[0]
         image_width = self.params.image_size[1]
         hidden_size = self.params.hidden_size
         output_size = self.params.output_size
-        num_layers = self.params.num_layers
         # LSTM Layers
         self.horizontal_layer = LSTM(input_size=image_height, hidden_size=hidden_size,
-                                     num_layers=num_layers, bidirectional=True, batch_first=True, bias=True)
+                                     bidirectional=True, batch_first=True, bias=True)
         self.vertical_layer = LSTM(input_size=image_width, hidden_size=hidden_size,
-                                   num_layers=num_layers, bidirectional=True, batch_first=True, bias=True)
+                                   bidirectional=True, batch_first=True, bias=True)
         # Output Layer
         self.output_layer = Linear(in_features=4 * hidden_size * image_height,
                                    out_features=output_size)
@@ -60,7 +61,8 @@ class MNIST_Network(Module):
 
     @classmethod
     def load_model(cls, package, useGPU=False):
-        params = package['params']
+        parameters = package['params']
+        params = namedtuple('Parameters', (parameters.keys()))(*parameters.values())
         model = cls(params)
         model.load_state_dict(package['state_dict'])
         # Replace NaN parameters with random values

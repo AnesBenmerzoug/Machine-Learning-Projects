@@ -10,7 +10,6 @@ from torchvision.transforms import transforms
 from mnist.imageTransform import ImageTransform
 from mnist.model import MNIST_Network
 from mnist.optimizer import SVRG
-from mnist.loss import Entropy
 from torch.nn.utils import clip_grad_norm
 from collections import namedtuple
 from copy import deepcopy
