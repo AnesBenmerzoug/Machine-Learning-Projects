@@ -3,7 +3,7 @@
 # Model Parameters
 image_size: [32, 32]
 num_channels: 3
-hidden_size: 16
+hidden_size: 32
 num_layers: 1
 output_size: 10
 batch_size: 1

@@ -5,19 +5,25 @@ import torch.nn.functional as F
 
 class CIFAR10_Network(Module):
     r"""
-    A Deep Neural Network implementation that a vertical and a horizontal BLSTM layers to scan the image
-    and a fully connected layer that will use their outputs to generate the class conditional probability
-    using a softmax output
+    A Deep Neural Network implementation that contains a vertical and a horizontal BLSTM layers to scan the image
+    and two fully connected layers. The first fully connected layer combines the three channels of the input image
+    into one and then the two BLSTM layers will take the combined image and scan vertically and horizontally respectively
+    and finally the second fully connected layer will use their outputs to generate the class conditional probability
+    using a softmax non-linearity
     """
     def __init__(self, params):
         super(CIFAR10_Network, self).__init__()
         # Module Parameters
         self.params = params
-        input_height = self.params.image_size[0] * self.params.num_channels
-        input_width = self.params.image_size[1] * self.params.num_channels
+        num_channels = self.params.num_channels
+        input_height = self.params.image_size[0]
+        input_width = self.params.image_size[1]
         hidden_size = self.params.hidden_size
         output_size = self.params.output_size
         num_layers = self.params.num_layers
+        # Combine Layer
+        self.combine_layer = Linear(in_features=num_channels,
+                                    out_features=1)
         # LSTM Layers
         self.horizontal_layer = LSTM(input_size=input_height, hidden_size=hidden_size,
                                      num_layers=num_layers, bidirectional=True, batch_first=True, bias=True)
@@ -31,6 +37,8 @@ class CIFAR10_Network(Module):
         self.reset_parameters()
 
     def forward(self, input_image):
+        # Combine Layer
+        input_image = self.combine_layer(input_image).squeeze(3)
         # Horizontal LSTM Layer
         output_horizontal, _ = self.horizontal_layer(input_image)
         # Vertical LSTM Layer
