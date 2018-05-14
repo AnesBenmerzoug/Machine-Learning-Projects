@@ -6,9 +6,9 @@ from collections import namedtuple
 
 class MNIST_Network(Module):
     r"""
-    A Deep Neural Network implementation that a vertical and a horizontal BLSTM layers to scan the image
+    A Deep Neural Network implementation that contains a vertical and a horizontal BLSTM layers to scan the image
     and a fully connected layer that will use their outputs to generate the class conditional probability
-    using a softmax output
+    using a softmax non-linearity
     """
     def __init__(self, params):
         super(MNIST_Network, self).__init__()
