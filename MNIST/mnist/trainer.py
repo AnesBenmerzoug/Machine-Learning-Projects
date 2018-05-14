@@ -85,8 +85,6 @@ class MNISTTrainer(object):
         # Criterion
         self.criterion = NLLLoss()
 
-        self.entropy = Entropy()
-
     def snapshot_closure(self):
         def closure(data, target):
             # Wrap it in Variables
