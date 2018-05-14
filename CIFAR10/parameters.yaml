@@ -1,0 +1,28 @@
+# Project Parameters
+
+# Model Parameters
+image_size: [32, 32]
+num_channels: 3
+hidden_size: 16
+num_layers: 1
+output_size: 10
+batch_size: 1
+savedModelDir: './trained_models/'
+testModelPath: './trained_models/'
+
+# Dataset Parameters
+datasetDir: './data/'
+num_workers: 2
+
+# Training Parameters
+trainModel: True
+useGPU: False
+resumeTraining: False
+num_epochs: 50
+max_norm: 400
+# Optimizer Parameters
+optimizer: 'Adam'
+learning_rate: 1.0e-2
+momentum: 0.9
+nesterov: True
+update_frequency: 2
