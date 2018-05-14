@@ -5,6 +5,7 @@ from torchvision.datasets import CIFAR10
 from torchvision.transforms import transforms
 from cifar10.model import CIFAR10_Network
 from cifar10.imageTransform import ImageTransform
+from collections import namedtuple
 import random
 
 
@@ -28,7 +29,11 @@ class CIFAR10Tester(object):
         self.useGPU = self.params.useGPU and torch.cuda.is_available()
 
         # Initialize model
-        self.model = CIFAR10_Network.load_model(path=self.params.testModelPath, useGPU=self.useGPU)
+        self.load_model()
+
+        print(self.model)
+
+        print("Number of parameters = {}".format(self.model.num_parameters()))
 
         if self.useGPU is True:
             print("Using GPU")
@@ -87,3 +92,10 @@ class CIFAR10Tester(object):
         outputs = self.model(images)
         _, predicted = torch.max(outputs.data, 1)
         print('Predicted:     ', ' '.join('%5s' % self.classes[predicted[j]] for j in range(int(images.size(0)))))
+
+    def load_model(self, useGPU=False):
+        package = torch.load(self.params.testModelPath, map_location=lambda storage, loc: storage)
+        self.model = CIFAR10_Network.load_model(package, useGPU)
+        parameters = package['params']
+        self.params = namedtuple('Parameters', (parameters.keys()))(*parameters.values())
+
