@@ -2,9 +2,13 @@
 
 # Model Parameters
 image_size: [32, 32]
-num_channels: 3
-hidden_size: 32
-num_layers: 1
+conv1_in_size: 3
+conv1_out_size: 64
+conv2_out_size: 128
+conv3_out_size: 256
+conv4_out_size: 512
+fc1_out_size: 1024
+fc2_out_size: 256
 output_size: 10
 batch_size: 1
 savedModelDir: './trained_models/'

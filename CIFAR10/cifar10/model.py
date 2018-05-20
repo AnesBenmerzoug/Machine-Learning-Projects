@@ -1,61 +1,96 @@
 import torch
-from torch.nn import Module, Linear, LSTM
+from torch.nn import Module, Linear, Conv2d, Sequential, ReLU, BatchNorm2d
 import torch.nn.functional as F
 
 
 class CIFAR10_Network(Module):
     r"""
-    A Deep Neural Network implementation that contains a vertical and a horizontal BLSTM layers to scan the image
-    and two fully connected layers. The first fully connected layer combines the three channels of the input image
-    into one and then the two BLSTM layers will take the combined image and scan vertically and horizontally respectively
-    and finally the second fully connected layer will use their outputs to generate the class conditional probability
-    using a softmax non-linearity
+    A Deep Neural Network implementation inspired by the one described in the article:
+    "VERY DEEP CONVOLUTIONAL NETWORKS FOR LARGE-SCALE IMAGE RECOGNITION"
     """
     def __init__(self, params):
         super(CIFAR10_Network, self).__init__()
         # Module Parameters
         self.params = params
-        num_channels = self.params.num_channels
         input_height = self.params.image_size[0]
         input_width = self.params.image_size[1]
-        hidden_size = self.params.hidden_size
+        conv1_in_size = self.params.conv1_in_size
+        conv1_out_size = self.params.conv1_out_size
+        conv2_out_size = self.params.conv2_out_size
+        conv3_out_size = self.params.conv3_out_size
+        conv4_out_size = self.params.conv4_out_size
+        fc1_out_size = self.params.fc1_out_size
+        fc2_out_size = self.params.fc2_out_size
         output_size = self.params.output_size
-        num_layers = self.params.num_layers
-        # Combine Layer
-        self.combine_layer = Linear(in_features=num_channels,
-                                    out_features=1)
-        # LSTM Layers
-        self.horizontal_layer = LSTM(input_size=input_height, hidden_size=hidden_size,
-                                     num_layers=num_layers, bidirectional=True, batch_first=True, bias=True)
-        self.vertical_layer = LSTM(input_size=input_width, hidden_size=hidden_size,
-                                   num_layers=num_layers, bidirectional=True, batch_first=True, bias=True)
-        # Output Layer
-        self.output_layer = Linear(in_features=4 * hidden_size * input_height,
+
+        # Conv + BN + Relu Layers
+        self.ConvBNReLU1 = Sequential(
+            Conv2d(in_channels=conv1_in_size, out_channels=conv1_out_size, kernel_size=3, padding=1, stride=1),
+            BatchNorm2d(num_features=conv1_out_size),
+            ReLU(inplace=True),
+            Conv2d(in_channels=conv1_out_size, out_channels=conv1_out_size, kernel_size=3, padding=1, stride=1),
+            BatchNorm2d(num_features=conv1_out_size),
+            ReLU(inplace=True)
+        )
+
+        self.ConvBNReLU2 = Sequential(
+            Conv2d(in_channels=conv1_out_size, out_channels=conv2_out_size, kernel_size=3, padding=1, stride=1),
+            BatchNorm2d(num_features=conv2_out_size),
+            ReLU(inplace=True),
+            Conv2d(in_channels=conv2_out_size, out_channels=conv2_out_size, kernel_size=3, padding=1, stride=1),
+            BatchNorm2d(num_features=conv2_out_size),
+            ReLU(inplace=True)
+        )
+
+        self.ConvBNReLU3 = Sequential(
+            Conv2d(in_channels=conv2_out_size, out_channels=conv3_out_size, kernel_size=3, padding=1, stride=1),
+            BatchNorm2d(num_features=conv3_out_size),
+            ReLU(inplace=True),
+            Conv2d(in_channels=conv3_out_size, out_channels=conv3_out_size, kernel_size=3, padding=1, stride=1),
+            BatchNorm2d(num_features=conv3_out_size),
+            ReLU(inplace=True),
+        )
+
+        self.ConvBNReLU4 = Sequential(
+            Conv2d(in_channels=conv3_out_size, out_channels=conv4_out_size, kernel_size=3, padding=1, stride=1),
+            BatchNorm2d(num_features=conv4_out_size),
+            ReLU(inplace=True),
+            Conv2d(in_channels=conv4_out_size, out_channels=conv4_out_size, kernel_size=3, padding=1, stride=1),
+            BatchNorm2d(num_features=conv4_out_size),
+            ReLU(inplace=True),
+        )
+
+        # Fully Connected Layers
+        self.fc1 = Linear(in_features=2 * 2 * conv4_out_size,
+                          out_features=fc1_out_size)
+        self.fc2 = Linear(in_features=fc1_out_size,
+                          out_features=fc2_out_size)
+        self.output_layer = Linear(in_features=fc2_out_size,
                                    out_features=output_size)
 
         # Initialize Parameters
-        self.reset_parameters()
+        self.initialize_parameters()
 
     def forward(self, input_image):
-        # Combine Layer
-        input_image = self.combine_layer(input_image).squeeze(3)
-        # Horizontal LSTM Layer
-        output_horizontal, _ = self.horizontal_layer(input_image)
-        # Vertical LSTM Layer
-        output_vertical, _ = self.vertical_layer(input_image.transpose(1, 2))
-        # Concatenate the outputs of both layers
-        output = torch.cat((output_horizontal, output_vertical), dim=2)
-        # Change the view to process all outputs at once
+        # Convolutional Layers
+        output = F.max_pool2d(self.ConvBNReLU1(input_image), kernel_size=2, stride=2)
+        output = F.max_pool2d(self.ConvBNReLU2(output), kernel_size=2, stride=2)
+        output = F.max_pool2d(self.ConvBNReLU3(output), kernel_size=2, stride=2)
+        output = F.max_pool2d(self.ConvBNReLU4(output), kernel_size=2, stride=2)
+        # Fully Connected Layers
         output = output.view(output.size(0), -1)
+        output = F.relu(self.fc1(output), inplace=True)
+        output = F.relu(self.fc2(output), inplace=True)
+        output = self.output_layer(output)
         if self.training is True:
-            # Linear + LogSoftmax
-            output = F.log_softmax(self.output_layer(output), dim=1)
+            # LogSoftmax
+            output = F.log_softmax(output, dim=1)
         else:
-            # Linear + Softmax
-            output = F.softmax(self.output_layer(output), dim=1)
+            # Softmax
+            output = F.softmax(output, dim=1)
         return output
 
-    def reset_parameters(self):
+    def initialize_parameters(self):
         for parameter in self.parameters():
             if len(parameter.size()) == 2:
                 torch.nn.init.xavier_uniform(parameter, gain=1.0)
