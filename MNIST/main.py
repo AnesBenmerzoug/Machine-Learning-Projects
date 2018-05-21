@@ -4,7 +4,7 @@ import faulthandler
 import yaml
 import time
 
-from mnist import *
+from src import *
 
 if __name__ == "__main__":
     print("Starting time: {}".format(time.asctime()))
