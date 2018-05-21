@@ -8,7 +8,6 @@ from torch.utils.data.sampler import RandomSampler
 from torch.nn.utils import clip_grad_norm
 from torchvision.datasets import CIFAR10
 from torchvision.transforms import transforms
-from src.imageTransform import ImageTransform
 from src.model import CIFAR10_Network
 from src.optimizer import SVRG
 from collections import namedtuple
@@ -22,7 +21,7 @@ class CIFAR10Trainer(object):
         self.params = parameters
 
         # Transform applied to each image
-        transform = transforms.Compose([transforms.ToTensor(), ImageTransform(self.params)])
+        transform = transforms.ToTensor()
 
         # Initialize datasets
         self.trainset = CIFAR10(root=self.params.datasetDir, train=True,

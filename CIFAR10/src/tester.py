@@ -4,7 +4,6 @@ from torch.utils.data import DataLoader
 from torchvision.datasets import CIFAR10
 from torchvision.transforms import transforms
 from src.model import CIFAR10_Network
-from src.imageTransform import ImageTransform
 from collections import namedtuple
 import random
 
@@ -15,7 +14,7 @@ class CIFAR10Tester(object):
         self.classes = ('airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
         # Transform applied to each image
-        transform = transforms.Compose([transforms.ToTensor(), ImageTransform(self.params)])
+        transform = transforms.ToTensor()
 
         # Initialize datasets
         self.testset = CIFAR10(root=self.params.datasetDir, train=False,
