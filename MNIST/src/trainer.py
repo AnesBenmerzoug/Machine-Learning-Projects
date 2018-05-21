@@ -1,23 +1,23 @@
 import torch
 import numpy as np
 import torch.optim as optim
-from torch.nn import NLLLoss
 from torch.autograd import Variable
+from torch.nn import NLLLoss
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import RandomSampler
-from torch.nn.utils import clip_grad_norm
-from torchvision.datasets import CIFAR10
+from torchvision.datasets import MNIST
 from torchvision.transforms import transforms
-from cifar10.imageTransform import ImageTransform
-from cifar10.model import CIFAR10_Network
-from cifar10.optimizer import SVRG
+from src.imageTransform import ImageTransform
+from src.model import MNIST_Network
+from src.optimizer import SVRG
+from torch.nn.utils import clip_grad_norm
 from collections import namedtuple
 from copy import deepcopy
 import time
 import os
 
 
-class CIFAR10Trainer(object):
+class MNISTTrainer(object):
     def __init__(self, parameters):
         self.params = parameters
 
@@ -25,10 +25,10 @@ class CIFAR10Trainer(object):
         transform = transforms.Compose([transforms.ToTensor(), ImageTransform(self.params)])
 
         # Initialize datasets
-        self.trainset = CIFAR10(root=self.params.datasetDir, train=True,
-                                download=True, transform=transform)
-        self.testset = CIFAR10(root=self.params.datasetDir, train=False,
-                               download=True, transform=transform)
+        self.trainset = MNIST(root=self.params.datasetDir, train=True,
+                              download=True, transform=transform)
+        self.testset = MNIST(root=self.params.datasetDir, train=False,
+                             download=True, transform=transform)
 
         # Initialize loaders
         self.trainloader = DataLoader(self.trainset, batch_size=self.params.batch_size,
@@ -44,7 +44,7 @@ class CIFAR10Trainer(object):
         # Initialize model
         if self.params.resumeTraining is False:
             print("Training New Model")
-            self.model = CIFAR10_Network(self.params)
+            self.model = MNIST_Network(self.params)
         else:
             print("Resuming Training")
             self.load_model(self.useGPU)
@@ -56,6 +56,8 @@ class CIFAR10Trainer(object):
 
         print("Number of parameters = {}".format(self.model.num_parameters()))
 
+        # Checking for GPU
+        self.useGPU = self.params.useGPU and torch.cuda.is_available()
         if self.useGPU is True:
             print("Using GPU")
             try:
@@ -121,7 +123,7 @@ class CIFAR10Trainer(object):
             # Go through the training set
             avg_losses[epoch] = self.train_epoch()
 
-            print("Average loss= {}".format(avg_losses[epoch]))
+            print("Average loss= {:.3f}".format(avg_losses[epoch]))
 
             # Switch to eval and go through the test set
             self.model.eval()
@@ -151,7 +153,8 @@ class CIFAR10Trainer(object):
             # Main Model Forward Step
             output = self.model(inputs)
             # Loss Computation
-            loss = self.criterion(output, labels)
+            entropy = self.entropy(output)
+            loss = self.criterion(output, labels) - 0.1 * entropy
             inf = float("inf")
             if loss.data[0] == inf or loss.data[0] == -inf:
                 print("Warning, received inf loss. Skipping it")
@@ -177,7 +180,7 @@ class CIFAR10Trainer(object):
             if self.useGPU is True:
                 torch.cuda.synchronize()
             del inputs, labels, data, loss, output
-            # Compute the average loss for this epoch
+        # Compute the average loss for this epoch
         avg_loss = losses / len(self.trainloader)
         return avg_loss
 
@@ -194,7 +197,7 @@ class CIFAR10Trainer(object):
             # Forward step
             outputs = self.model(inputs)
             _, predicted = torch.max(outputs.data, dim=1)
-            total += labels.size(0)
+            total += labels.size()[0]
             correct += torch.sum(predicted == labels.data)
             del outputs, inputs, labels, data
         total_accuracy = correct / total * 100.0
@@ -208,7 +211,7 @@ class CIFAR10Trainer(object):
 
     def load_model(self, useGPU=False):
         package = torch.load(self.params.trainedModelPath, map_location=lambda storage, loc: storage)
-        self.model = CIFAR10_Network.load_model(package, useGPU)
+        self.model = MNIST_Network.load_model(package, useGPU)
         parameters = package['params']
         self.params = namedtuple('Parameters', (parameters.keys()))(*parameters.values())
         self.optimizer = self.optimizer_select()
@@ -237,3 +240,4 @@ class CIFAR10Trainer(object):
                         nesterov=self.params.nesterov, update_frequency=self.params.update_frequency)
         else:
             raise NotImplementedError
+

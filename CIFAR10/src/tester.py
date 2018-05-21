@@ -1,26 +1,25 @@
 import torch
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
-from torchvision.datasets import MNIST
+from torchvision.datasets import CIFAR10
 from torchvision.transforms import transforms
-from mnist.imageTransform import ImageTransform
-from mnist.model import MNIST_Network
-from mnist.utils import imgshow
+from src.model import CIFAR10_Network
+from src.imageTransform import ImageTransform
 from collections import namedtuple
 import random
 
 
-class MNISTTester(object):
+class CIFAR10Tester(object):
     def __init__(self, parameters):
         self.params = parameters
-        self.classes = ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
+        self.classes = ('airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
         # Transform applied to each image
         transform = transforms.Compose([transforms.ToTensor(), ImageTransform(self.params)])
 
         # Initialize datasets
-        self.testset = MNIST(root=self.params.datasetDir, train=False,
-                             download=True, transform=transform)
+        self.testset = CIFAR10(root=self.params.datasetDir, train=False,
+                               download=True, transform=transform)
 
         # Initialize loaders
         self.testloader = DataLoader(self.testset, batch_size=self.params.batch_size,
@@ -29,7 +28,7 @@ class MNISTTester(object):
         # Checking for GPU
         self.useGPU = self.params.useGPU and torch.cuda.is_available()
 
-        # Load Trained Model
+        # Initialize model
         self.load_model()
 
         print(self.model)
@@ -96,7 +95,7 @@ class MNISTTester(object):
 
     def load_model(self, useGPU=False):
         package = torch.load(self.params.testModelPath, map_location=lambda storage, loc: storage)
-        self.model = MNIST_Network.load_model(package, useGPU)
+        self.model = CIFAR10_Network.load_model(package, useGPU)
         parameters = package['params']
         self.params = namedtuple('Parameters', (parameters.keys()))(*parameters.values())
 

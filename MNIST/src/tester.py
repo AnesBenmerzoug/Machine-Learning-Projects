@@ -1,25 +1,26 @@
 import torch
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
-from torchvision.datasets import CIFAR10
+from torchvision.datasets import MNIST
 from torchvision.transforms import transforms
-from cifar10.model import CIFAR10_Network
-from cifar10.imageTransform import ImageTransform
+from src.imageTransform import ImageTransform
+from src.model import MNIST_Network
+from src.utils import imgshow
 from collections import namedtuple
 import random
 
 
-class CIFAR10Tester(object):
+class MNISTTester(object):
     def __init__(self, parameters):
         self.params = parameters
-        self.classes = ('airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
+        self.classes = ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
 
         # Transform applied to each image
         transform = transforms.Compose([transforms.ToTensor(), ImageTransform(self.params)])
 
         # Initialize datasets
-        self.testset = CIFAR10(root=self.params.datasetDir, train=False,
-                               download=True, transform=transform)
+        self.testset = MNIST(root=self.params.datasetDir, train=False,
+                             download=True, transform=transform)
 
         # Initialize loaders
         self.testloader = DataLoader(self.testset, batch_size=self.params.batch_size,
@@ -28,7 +29,7 @@ class CIFAR10Tester(object):
         # Checking for GPU
         self.useGPU = self.params.useGPU and torch.cuda.is_available()
 
-        # Initialize model
+        # Load Trained Model
         self.load_model()
 
         print(self.model)
@@ -86,7 +87,6 @@ class CIFAR10Tester(object):
             data.append(dataiter.next())
         random.shuffle(data)
         images, labels = data[random.randint(0, len(data) - 1)]
-        #imgshow(images)
         print('GroundTruth: ', ' '.join('%5s' % self.classes[labels[j]] for j in range(int(images.size(0)))))
         images, labels = Variable(images), Variable(labels)
         outputs = self.model(images)
@@ -95,7 +95,7 @@ class CIFAR10Tester(object):
 
     def load_model(self, useGPU=False):
         package = torch.load(self.params.testModelPath, map_location=lambda storage, loc: storage)
-        self.model = CIFAR10_Network.load_model(package, useGPU)
+        self.model = MNIST_Network.load_model(package, useGPU)
         parameters = package['params']
         self.params = namedtuple('Parameters', (parameters.keys()))(*parameters.values())
 

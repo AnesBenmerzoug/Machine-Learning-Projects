@@ -9,4 +9,4 @@ for the 10 classes in the [MNIST](http://yann.lecun.com/exdb/mnist/) Dataset.
 The obtained classification accuracy obtained after 1000 epochs is 99%
 
 A per class classification accuracy can be seen in the following plot:
-![alt tag](images/ClassAccuracy.png "Class Accuracy")
+![alt tag](static/ClassAccuracy.png "Class Accuracy")
