@@ -1,0 +1,33 @@
+# Project Parameters
+
+# Model Parameters
+image_size: [96, 96]
+conv1_in_size: 3
+conv1_out_size: 64
+conv2_out_size: 128
+fc1_out_size: 1024
+fc2_out_size: 256
+output_size: 10
+batch_size: 1
+savedModelDir: './trained_models/'
+testModelPath: './trained_models/'
+
+# Dataset Parameters
+datasetDir: './data/'
+num_workers: 2
+
+# Training Parameters
+trainModel: True
+useGPU: False
+resumeTraining: False
+num_epochs_unlabelled: 100
+num_epochs_labelled: 20
+max_norm: 400
+lambda_rec: 0.5
+lambda_mid: 0.5
+# Optimizer Parameters
+optimizer: 'Adam'
+learning_rate: 1.0e-2
+momentum: 0.9
+nesterov: True
+update_frequency: 2
