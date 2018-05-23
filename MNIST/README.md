@@ -6,7 +6,12 @@ it in the vertical direction. The Fully Connected layer takes the output of both
 for the 10 classes in the [MNIST](http://yann.lecun.com/exdb/mnist/) Dataset.
 
 ## Accuracy
-The obtained classification accuracy obtained after 1000 epochs is 99%
+The obtained classification accuracy obtained after 1000 epochs is around 99%
 
 A per class classification accuracy can be seen in the following plot:
+
 ![alt tag](static/ClassAccuracy.png "Class Accuracy")
+
+The next plot is the confusion matrix for our model given the classification task:
+
+![alt tag](static/ConfusionMatrix.png "Confusion Matrix")

@@ -55,6 +55,7 @@ class MNISTTester(object):
         self.model.eval()
         correct = 0
         total = 0
+        confusion_matrix = [[0] * 10 for i in range(10)]
         class_correct = [0]*10
         class_total = [0]*10
         for (data) in self.testloader:
@@ -66,17 +67,21 @@ class MNISTTester(object):
             inputs, labels = Variable(inputs), Variable(labels)
             # Forward step
             outputs = self.model(inputs)
-            _, predicted = torch.max(outputs.data, 1)
+            _, guesses = torch.max(outputs.data, 1)
             total += labels.size(0)
-            correct += (predicted == labels.data).sum()
-            c = (predicted == labels.data).squeeze()
+            correct += (guesses == labels.data).sum()
+            c = (guesses == labels.data).squeeze()
             for j in range(int(inputs.size(0))):
                 label = labels[j]
+                guess_i = guesses[j]
                 class_correct[label.data[0]] += c[j]
                 class_total[label.data[0]] += 1
+                confusion_matrix[label.data[0]][guess_i] += 1
         total_accuracy = correct / total * 100.0
         class_accuracy = [class_correct[k] / class_total[k] * 100.0 if class_total[k] != 0 else 0.0 for k in range(10)]
-        return total_accuracy, class_accuracy
+        confusion_matrix = [[confusion_matrix[i][j] / class_total[i] for j in range(len(confusion_matrix[i]))]
+                            for i in range(len(confusion_matrix))]
+        return total_accuracy, class_accuracy, confusion_matrix
 
     def test_random_sample(self):
         print("Testing random sample")

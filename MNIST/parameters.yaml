@@ -6,7 +6,7 @@ hidden_size: 16
 output_size: 10
 batch_size: 32
 savedModelDir: './trained_models/'
-testModelPath: './trained_models/Trained_Model'
+testModelPath: './trained_models/Trained_Model_99_Accuracy'
 
 # Dataset Parameters
 datasetDir: './data/'
