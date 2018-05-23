@@ -1,6 +1,7 @@
 import torch
 from torch.nn import Module, Linear, Conv2d, Sequential, ReLU, BatchNorm2d
 import torch.nn.functional as F
+from collections import namedtuple
 
 
 class CIFAR10_Network(Module):
@@ -103,17 +104,10 @@ class CIFAR10_Network(Module):
 
     @classmethod
     def load_model(cls, package, useGPU=False):
-        params = package['params']
+        parameters = package['params']
+        params = namedtuple('Parameters', (parameters.keys()))(*parameters.values())
         model = cls(params)
         model.load_state_dict(package['state_dict'])
-        # Replace NaN parameters with random values
-        for parameter in model.parameters():
-            if len(parameter.size()) == 2:
-                if float(parameter.data[0, 0]) != float(parameter.data[0, 0]):
-                    torch.nn.init.xavier_uniform(parameter, gain=1.0)
-            else:
-                if float(parameter.data[0]) != float(parameter.data[0]):
-                    torch.nn.init.uniform(parameter, -1.0, 1.0)
         if useGPU is True:
             model = model.cuda()
         return model
