@@ -23,44 +23,52 @@ class STL10_Network(Module):
 
         # Conv + BN + Relu Layers
         self.ConvBNReLU1 = Sequential(
-            Conv2d(in_channels=conv1_in_size, out_channels=conv1_out_size, kernel_size=3, padding=1, stride=1),
+            Conv2d(in_channels=conv1_in_size, out_channels=conv1_out_size,
+                   kernel_size=3, padding=1, stride=1),
             BatchNorm2d(num_features=conv1_out_size),
             ReLU(inplace=True),
-            Conv2d(in_channels=conv1_out_size, out_channels=conv1_out_size, kernel_size=3, padding=1, stride=1),
+            Conv2d(in_channels=conv1_out_size, out_channels=conv1_out_size,
+                   kernel_size=3, padding=1, stride=1),
             BatchNorm2d(num_features=conv1_out_size),
             ReLU(inplace=True)
         )
 
         self.ConvBNReLU2 = Sequential(
-            Conv2d(in_channels=conv1_out_size, out_channels=conv2_out_size, kernel_size=3, padding=1, stride=1),
+            Conv2d(in_channels=conv1_out_size, out_channels=conv2_out_size,
+                   kernel_size=3, padding=1, stride=1),
             BatchNorm2d(num_features=conv2_out_size),
             ReLU(inplace=True),
-            Conv2d(in_channels=conv2_out_size, out_channels=conv2_out_size, kernel_size=3, padding=1, stride=1),
+            Conv2d(in_channels=conv2_out_size, out_channels=conv2_out_size,
+                   kernel_size=3, padding=1, stride=1),
             BatchNorm2d(num_features=conv2_out_size),
             ReLU(inplace=True)
         )
 
         # DeConv + BN + Relu Layers
         self.DeConvBNReLU1 = Sequential(
-            ConvTranspose2d(in_channels=conv2_out_size, out_channels=conv1_out_size, kernel_size=3, padding=1, stride=1),
+            ConvTranspose2d(in_channels=conv2_out_size, out_channels=conv1_out_size,
+                            kernel_size=3, padding=1, stride=1),
             BatchNorm2d(num_features=conv1_out_size),
             ReLU(inplace=True),
-            ConvTranspose2d(in_channels=conv1_out_size, out_channels=conv1_out_size, kernel_size=3, padding=1, stride=1),
+            ConvTranspose2d(in_channels=conv1_out_size, out_channels=conv1_out_size,
+                            kernel_size=3, padding=1, stride=1),
             BatchNorm2d(num_features=conv1_out_size),
             ReLU(inplace=True)
         )
 
         self.DeConvBNReLU2 = Sequential(
-            ConvTranspose2d(in_channels=conv1_out_size, out_channels=conv1_in_size, kernel_size=3, padding=1, stride=1),
+            ConvTranspose2d(in_channels=conv1_out_size, out_channels=conv1_in_size,
+                            kernel_size=3, padding=1, stride=1),
             BatchNorm2d(num_features=conv1_in_size),
             ReLU(inplace=True),
-            ConvTranspose2d(in_channels=conv1_in_size, out_channels=conv1_in_size, kernel_size=3, padding=1, stride=1),
+            ConvTranspose2d(in_channels=conv1_in_size, out_channels=conv1_in_size,
+                            kernel_size=3, padding=1, stride=1),
             BatchNorm2d(num_features=conv1_in_size),
             ReLU(inplace=True)
         )
 
         # Fully Connected Layers
-        in_features = image_width * image_height * conv2_out_size // 16
+        in_features = image_height * image_width * conv2_out_size // 16
         self.fc1 = Linear(in_features=in_features,
                           out_features=fc1_out_size)
         self.fc2 = Linear(in_features=fc1_out_size,

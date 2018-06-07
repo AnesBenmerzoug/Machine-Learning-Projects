@@ -73,6 +73,11 @@ class STL10Trainer(object):
         # Setup optimizer
         self.optimizer = self.optimizer_select()
 
+        # Scheduler
+        self.scheduler = optim.lr_scheduler.StepLR(self.optimizer,
+                                                   step_size=self.params.step_size,
+                                                   gamma=self.params.decay_coeff)
+
         # Criterion
         self.criterion_supervised = NLLLoss()
         self.criterion_unsupervised = MSELoss()
@@ -102,6 +107,9 @@ class STL10Trainer(object):
             if epoch < self.params.num_epochs_unlabelled:
                 continue
 
+            # Update learning rate
+            self.scheduler.step(epoch)
+
             # Switch to eval and go through the test set
             self.model.eval()
 
@@ -111,14 +119,14 @@ class STL10Trainer(object):
             if max_accuracy is None or max_accuracy < test_accuracy:
                 max_accuracy = test_accuracy
                 best_model = self.model.state_dict()
-            # Saving trained model
-            self.save_model(best_model, max_accuracy)
-            return avg_losses
+        # Saving trained model
+        self.save_model(best_model, max_accuracy)
+        return avg_losses
 
     def train_epoch_unsupervised(self):
         losses = 0.0
         for batch_index, (data) in enumerate(self.unlabelledloader, 1):
-            if batch_index % 1 == 0:
+            if batch_index % 50 == 0:
                 print("Step {}".format(batch_index))
                 print("Average Loss so far: {}".format(losses / batch_index))
             # Split data tuple
@@ -135,7 +143,7 @@ class STL10Trainer(object):
                 if loss is None:
                     loss = self.params.lambda_rec * self.criterion_unsupervised(output_rec, inputs)
                 else:
-                    loss += self.params.lambda_mid * self.criterion_unsupervised(output_rec, output.detach())
+                    loss = loss + self.params.lambda_mid * self.criterion_unsupervised(output_rec, output.detach())
             inf = float("inf")
             if loss.data[0] == inf or loss.data[0] == -inf:
                 print("Warning, received inf loss. Skipping it")
@@ -155,13 +163,13 @@ class STL10Trainer(object):
                 torch.cuda.synchronize()
             del inputs, data, loss, rec_outputs
         # Compute the average loss for this epoch
-        avg_loss = losses / len(self.trainloader)
+        avg_loss = losses / len(self.unlabelledloader)
         return avg_loss
 
     def train_epoch_supervised(self):
         losses = 0.0
         for batch_index, (data) in enumerate(self.trainloader, 1):
-            if batch_index % 200 == 0:
+            if batch_index % 50 == 0:
                 print("Step {}".format(batch_index))
                 print("Average Loss so far: {}".format(losses / batch_index))
             # Split data tuple
@@ -179,7 +187,7 @@ class STL10Trainer(object):
                 if rec_loss is None:
                     rec_loss = self.params.lambda_rec * self.criterion_unsupervised(out_rec, inputs)
                 else:
-                    rec_loss += self.params.lambda_mid * self.criterion_unsupervised(out_rec, out.detach())
+                    rec_loss = rec_loss + self.params.lambda_mid * self.criterion_unsupervised(out_rec, out.detach())
             loss = loss + rec_loss
             inf = float("inf")
             if loss.data[0] == inf or loss.data[0] == -inf:
@@ -214,7 +222,7 @@ class STL10Trainer(object):
                 inputs, labels = inputs.cuda(), labels.cuda()
             inputs, labels = Variable(inputs), Variable(labels)
             # Forward step
-            outputs = self.model(inputs)
+            outputs, _ = self.model(inputs)
             _, predicted = torch.max(outputs.data, dim=1)
             total += labels.size(0)
             correct += torch.sum(predicted == labels.data)

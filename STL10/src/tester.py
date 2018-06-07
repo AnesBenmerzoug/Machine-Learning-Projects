@@ -63,7 +63,7 @@ class STL10Tester(object):
                 inputs, labels = inputs.cuda(), labels.cuda()
             inputs, labels = Variable(inputs), Variable(labels)
             # Forward step
-            outputs = self.model(inputs)
+            outputs, _ = self.model(inputs)
             _, predicted = torch.max(outputs.data, 1)
             total += labels.size(0)
             correct += (predicted == labels.data).sum()
@@ -88,7 +88,7 @@ class STL10Tester(object):
         #imgshow(images)
         print('GroundTruth: ', ' '.join('%5s' % self.classes[labels[j]] for j in range(int(images.size(0)))))
         images, labels = Variable(images), Variable(labels)
-        outputs = self.model(images)
+        outputs, _ = self.model(images)
         _, predicted = torch.max(outputs.data, 1)
         print('Predicted:     ', ' '.join('%5s' % self.classes[predicted[j]] for j in range(int(images.size(0)))))
 

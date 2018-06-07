@@ -20,8 +20,8 @@ num_workers: 2
 trainModel: True
 useGPU: False
 resumeTraining: False
-num_epochs_unlabelled: 100
-num_epochs_labelled: 20
+num_epochs_unlabelled: 200
+num_epochs_labelled: 200
 max_norm: 400
 lambda_rec: 0.5
 lambda_mid: 0.5
@@ -31,3 +31,6 @@ learning_rate: 1.0e-2
 momentum: 0.9
 nesterov: True
 update_frequency: 2
+# Scheduler Parameters
+decay_coeff: 0.5
+step_size: 50
