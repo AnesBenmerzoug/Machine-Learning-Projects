@@ -7,3 +7,14 @@ Additionally, the former sets are followed by 3 Fully Connected layers each foll
 and softmax for the last to output the class conditionaly probability for the 10 classes in the [STL-10](http://ai.stanford.edu/~acoates/stl10/) Dataset.
 The particular thing about this network is that be used for supervised learning, unsupervised learning as well as semi-supervised learning through the use
 of different losses.
+
+## Accuracy
+The obtained classification accuracy obtained after 100 epochs is around 57%
+
+A per class classification accuracy can be seen in the following plot:
+
+![alt tag](static/ClassAccuracy.png "Class Accuracy")
+
+In this next plot we can see the confusion matrix for our model given the classification task:
+
+![alt tag](static/ConfusionMatrix.png "Confusion Matrix")

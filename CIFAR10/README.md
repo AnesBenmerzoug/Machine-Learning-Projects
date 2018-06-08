@@ -6,6 +6,7 @@ The Network is a deep convolutional network inspired by the ones described in [V
 The obtained classification accuracy obtained after 100 epochs is around 86%
 
 A per class classification accuracy can be seen in the following plot:
+
 ![alt tag](static/ClassAccuracy.png "Class Accuracy")
 
 In this next plot, which is the confusion matrix for our model given the classification task, we can notice that for example

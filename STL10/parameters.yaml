@@ -8,20 +8,20 @@ conv2_out_size: 128
 fc1_out_size: 1024
 fc2_out_size: 256
 output_size: 10
-batch_size: 1
+batch_size: 16
 savedModelDir: './trained_models/'
-testModelPath: './trained_models/'
+testModelPath: './trained_models/Trained_Model_57_Accuracy'
 
 # Dataset Parameters
 datasetDir: './data/'
 num_workers: 2
 
 # Training Parameters
-trainModel: True
+trainModel: False
 useGPU: False
 resumeTraining: False
 num_epochs_unlabelled: 200
-num_epochs_labelled: 200
+num_epochs_labelled: 1000
 max_norm: 400
 lambda_rec: 0.5
 lambda_mid: 0.5

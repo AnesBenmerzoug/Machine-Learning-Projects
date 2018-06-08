@@ -5,6 +5,7 @@ This repository contains a few Machine Learning projects that I made using PyTor
 * [MNIST](MNIST)
 * [CIFAR-10](CIFAR10)
 * [STL-10](STL10)
+* [CartPole](Reinforcement-Learning/CartPole)
 
 ## Requierements
 

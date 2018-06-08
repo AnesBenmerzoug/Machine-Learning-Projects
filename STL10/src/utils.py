@@ -1,6 +1,7 @@
 from __future__ import print_function, division
 from torchvision.utils import make_grid
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import numpy as np
 
 
@@ -34,3 +35,20 @@ def plotaccuracy(accuracy, classes, title='', xlabel='', ylabel=''):
     plt.xticks(indices, classes)
     plt.show()
 
+def plotconfusion(confusion_matrix, classes, title='', xlabel='', ylabel=''):
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    cax = ax.matshow(confusion_matrix)
+    fig.colorbar(cax)
+    tick_marks = np.arange(len(classes))
+    ax.set_xticks(tick_marks)
+    ax.set_yticks(tick_marks)
+    ax.set_xticklabels([''] + list(classes), rotation=90)
+    ax.set_yticklabels([''] + list(classes))
+    # Force label at every tick
+    ax.xaxis.set_major_locator(ticker.MultipleLocator(1))
+    ax.yaxis.set_major_locator(ticker.MultipleLocator(1))
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.title(title)
+    plt.show()

@@ -54,7 +54,7 @@ class CIFAR10Tester(object):
         self.model.eval()
         correct = 0
         total = 0
-        confusion_matrix = [[0] * 10 for i in range(10)]
+        confusion_matrix = [[0] * 10 for i in range(len(self.classes))]
         class_correct = [0] * 10
         class_total = [0] * 10
         for (data) in self.testloader:
