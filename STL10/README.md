@@ -13,7 +13,7 @@ The obtained classification accuracy obtained after 100 epochs is around 57%
 
 A per class classification accuracy can be seen in the following plot:
 
-![alt tag](static/ClassAccuracy.png "Class Accuracy")
+![alt tag](static/ClassificationAccuracy.png "Class Accuracy")
 
 In this next plot we can see the confusion matrix for our model given the classification task:
 
