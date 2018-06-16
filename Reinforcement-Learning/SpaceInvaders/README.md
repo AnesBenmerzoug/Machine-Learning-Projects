@@ -5,8 +5,6 @@ with a change to the optimization part that uses the equations from [Deep Reinfo
 and another change to the action policy, where we use a Bolzmann (softmax) exploration strategy instead of the more popular
 ε-greedy exploration strategy.
 
-After 900 episodes of training, the model can manage to score an average of 241 points and a max 700 points over 100 games:
+After 900 episodes of training, the model can manage to score an average of 241 points and a max 700 points over 100 games:upda
 
-![SpaceInvader Scores](static/scores.png)
-
-![SpaceInvaders Animation](static/animation.gif)
+<img src="static/scores.png" width="500"/> <img src="static/animation.gif" width="250"/> 
