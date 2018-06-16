@@ -121,8 +121,8 @@ class AgentTrainer(object):
         score = 0.0
         # Initialize the environment and state
         self.env.reset()
-        last_screen = self.env.get_frame()
-        current_screen = self.env.get_frame()
+        last_screen, _ = self.env.get_frame()
+        current_screen, _ = self.env.get_frame()
         state = current_screen - last_screen
         for step_index in range(1, self.params.num_steps_per_episode+1):
             # Wrap the state in a Variable
@@ -137,7 +137,7 @@ class AgentTrainer(object):
 
             # Observe new state
             last_screen = current_screen
-            current_screen = self.env.get_frame()
+            current_screen, _ = self.env.get_frame()
             if not done:
                 next_state = current_screen - last_screen
             else:

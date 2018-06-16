@@ -22,7 +22,8 @@ class CartPoleEnvironment:
         return int(self.env.state[0] * scale + self.frame_width / 2.0)  # MIDDLE OF CART
 
     def get_frame(self):
-        frame = self.render(mode='rgb_array').transpose((2, 0, 1))  # transpose into torch order (CHW)
+        original_frame = self.render(mode='rgb_array')
+        frame = original_frame.transpose((2, 0, 1))  # transpose into torch order (CHW)
         # Strip off the top and bottom of the frame
         frame = frame[:, 160:320]
         view_width = 320
@@ -41,7 +42,7 @@ class CartPoleEnvironment:
         frame = np.ascontiguousarray(frame, dtype=np.float32) / 255
         frame = torch.from_numpy(frame)
         # Resize, and add a batch dimension (BCHW)
-        return self.resize(frame).unsqueeze(0)
+        return self.resize(frame).unsqueeze(0), original_frame
 
     def step(self, action):
         return self.env.step(action)

@@ -1,7 +1,8 @@
-from __future__ import print_function, division
 from torchvision.utils import make_grid
 import matplotlib.pyplot as plt
+import moviepy.editor as mpy
 import numpy as np
+import os
 
 
 def imgshow():
@@ -35,3 +36,7 @@ def plotaccuracy(accuracy, classes, title='', xlabel='', ylabel=''):
     plt.xticks(indices, classes)
     plt.show()
 
+
+def save_animation(path, image_list, fps=12):
+    clip = mpy.ImageSequenceClip(image_list, fps=fps)
+    clip.write_gif(os.path.join(path, 'animation.gif'), fps=fps)

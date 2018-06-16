@@ -3,9 +3,8 @@ from torch.autograd import Variable
 from .agent import DQN
 from collections import namedtuple
 from .environment import CartPoleEnvironment
-from .utils import imgshow
+from .utils import save_animation
 import random
-import time
 
 
 class AgentTester(object):
@@ -47,10 +46,13 @@ class AgentTester(object):
 
     def test_model(self):
         self.model.eval()
+        # Initialize list to hold screens
+        screens = []
         # Initialize the environment and state
         self.env.reset()
-        last_screen = self.env.get_frame()
-        current_screen = self.env.get_frame()
+        last_screen, _ = self.env.get_frame()
+        current_screen, original_screen = self.env.get_frame()
+        screens.append(original_screen)
         state = current_screen - last_screen
         done = False
         duration = 0
@@ -67,7 +69,8 @@ class AgentTester(object):
 
             # Observe new state
             last_screen = current_screen
-            current_screen = self.env.get_frame()
+            current_screen, original_screen = self.env.get_frame()
+            screens.append(original_screen)
             if not done:
                 next_state = current_screen - last_screen
             else:
@@ -76,6 +79,7 @@ class AgentTester(object):
             # Move to the next state
             state = next_state
         print("Duration = {}".format(duration))
+        save_animation('static', screens, 24)
         # Close the environment
         self.env.close()
 
