@@ -18,10 +18,12 @@ class SpaceInvadersEnvironment:
 
     def get_frames(self, count):
         frames = []
+        original_frames = []
         for i in range(count):
             # transpose into torch order (CHW)
-            frame = self.render(mode='rgb_array').transpose(
-                (2, 0, 1))
+            frame = self.render(mode='rgb_array')
+            original_frames.append(frame)
+            frame = frame.transpose((2, 0, 1))
             # Convert it to grayscale
             frame = frame.mean(axis=0, keepdims=True)
             # Convert to float, rescale, convert to torch tensor
@@ -33,7 +35,7 @@ class SpaceInvadersEnvironment:
             else:
                 frame = frame + frame.lt(self.last_frame).float() * self.last_frame
             frames.append(frame)
-        return frames
+        return frames, original_frames
 
     def step(self, action):
         return self.env.step(action)

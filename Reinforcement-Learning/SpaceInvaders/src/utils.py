@@ -1,7 +1,8 @@
-from __future__ import print_function, division
 from torchvision.utils import make_grid
 import matplotlib.pyplot as plt
+import moviepy.editor as mpy
 import numpy as np
+import os
 
 
 def imgshow():
@@ -13,7 +14,7 @@ def imgshow():
     return draw
 
 
-def plotlosses(losses, title='', xlabel='', ylabel=''):
+def plot_losses(losses, title='', xlabel='', ylabel=''):
     epochs = np.arange(losses.size) + 1
     plt.plot(epochs, losses)
     plt.xlabel(xlabel)
@@ -22,7 +23,7 @@ def plotlosses(losses, title='', xlabel='', ylabel=''):
     plt.show()
 
 
-def plotaccuracy(accuracy, classes, title='', xlabel='', ylabel=''):
+def plot_accuracy(accuracy, classes, title='', xlabel='', ylabel=''):
     indices = np.arange(len(classes))
     width = 0.35
     bar = plt.bar(indices, accuracy, width)
@@ -35,3 +36,15 @@ def plotaccuracy(accuracy, classes, title='', xlabel='', ylabel=''):
     plt.xticks(indices, classes)
     plt.show()
 
+
+def plot_scores(scores, title='', xlabel='', ylabel='', bins=10):
+    plt.hist(scores, bins=bins)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.title(title)
+    plt.show()
+
+
+def save_animation(path, image_list, fps=12):
+    clip = mpy.ImageSequenceClip(image_list, fps=fps)
+    clip.write_gif(os.path.join(path, 'animation.gif'), fps=fps)

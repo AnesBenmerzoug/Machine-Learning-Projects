@@ -22,15 +22,19 @@ if __name__ == "__main__":
         # Training the model
         avg_losses, episode_durations = trainer.train_model()
         # Plot losses
-        plotlosses(avg_losses, title='Average Loss per Episode', xlabel='Episode', ylabel='Average Loss')
+        plot_losses(avg_losses, title='Average Loss per Episode', xlabel='Episode', ylabel='Average Loss')
         # Plot durations
-        plotlosses(episode_durations, title='Episode Durations', xlabel='Episode', ylabel='Duration')
+        plot_losses(episode_durations, title='Episode Durations', xlabel='Episode', ylabel='Duration')
 
     else:
         # Instantiating the test
         tester = AgentTester(parameters)
         # Testing the policy
-        tester.test_model()
+        screens, scores = tester.test_model()
+        # Plot Scores
+        plot_scores(scores, xlabel='Score', ylabel='Number of Games', bins=8)
+        # Save animation
+        save_animation('static', screens, 10)
 
     print("Finishing time: {}".format(time.asctime()))
 

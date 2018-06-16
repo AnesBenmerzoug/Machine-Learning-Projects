@@ -1,11 +1,9 @@
 import torch
-from torch.autograd import Variable
 from .agent import DQN
 from collections import namedtuple
+from torch.autograd import Variable
 from .environment import SpaceInvadersEnvironment
-from .utils import imgshow
 import random
-import time
 
 
 class AgentTester(object):
@@ -47,37 +45,51 @@ class AgentTester(object):
     def test_model(self):
         self.model.eval()
         #draw_fn = imgshow()
-        # Initialize the environment and state
-        self.env.reset()
-        # Get the first 4 frames and initialize the state
-        frames = self.env.get_frames(4)
-        state = torch.cat(frames, dim=1)
-        done = False
-        score = 0.0
-        while not done:
-            #draw_fn(frames[0])
-            self.env.render()
-            # Wrap the state in a Variable
-            if self.useGPU is True:
-                state = state.cuda()
-            state = Variable(state, volatile=True)
-            # Select and perform an action
-            action = self.select_action_epsilon_greedy(state)
-            _, reward, done, _ = self.env.step(action.data[0])
-            score += reward
+        best_screens = []
+        scores = []
+        for idx in range(100):
+            # list of screens
+            screens = []
+            # Initialize the environment and state
+            self.env.reset()
+            # Get the first 4 frames and initialize the state
+            frames, original_frames = self.env.get_frames(4)
+            screens.append(original_frames[-1])
+            state = torch.cat(frames, dim=1)
+            done = False
+            score = 0.0
+            while not done:
+                #draw_fn(frames[0])
+                self.env.render()
+                # Wrap the state in a Variable
+                if self.useGPU is True:
+                    state = state.cuda()
+                state = Variable(state, volatile=True)
+                # Select and perform an action
+                action = self.select_action_epsilon_greedy(state)
+                _, reward, done, _ = self.env.step(action.data[0])
+                score += reward
 
-            # Observe new state
-            if not done:
-                frames = frames[1:] + self.env.get_frames(1)
-                next_state = torch.cat(frames, dim=1)
-            else:
-                next_state = None
+                # Observe new state
+                if not done:
+                    new_frames, original_frames = self.env.get_frames(1)
+                    screens.append(original_frames[-1])
+                    frames = frames[1:] + new_frames
+                    next_state = torch.cat(frames, dim=1)
+                else:
+                    next_state = None
 
-            # Move to the next state
-            state = next_state
-        print("Score = {}".format(score))
+                # Move to the next state
+                state = next_state
+            scores.append(score)
+            print("Score = {}".format(score))
+            if score >= max(scores):
+                best_screens = screens[:]
+        print("Best Score = {}".format(max(scores)))
+        print("Average Score = {}".format(sum(scores)/len(scores)))
         # Close the environment
         self.env.close()
+        return best_screens, scores
 
     def select_action_epsilon_greedy(self, state):
         # Choose the action

@@ -123,13 +123,10 @@ class AgentTrainer(object):
         # Initialize the environment and state
         self.env.reset()
         # Get the first 4 frames and initialize the state
-        frames = self.env.get_frames(4)
+        frames, _ = self.env.get_frames(4)
         state = torch.cat(frames, dim=1)
         # Initiliaze the number of lives
         current_lives = 3
-        previous_lives = current_lives
-        # value by which the reward gets multiplied
-        reward_multiplier = 1.0 / 30
         for step_index in range(1, self.params.num_steps_per_episode+1):
             #self.env.render()
             # Wrap the state in a Variable
@@ -140,18 +137,18 @@ class AgentTrainer(object):
             action = self.select_action_boltzmann(state)
             _, reward, done, info = self.env.step(action.data[0])
             score += reward
-            reward = reward * reward_multiplier
+            reward = reward
 
             previous_lives = current_lives
             current_lives = info['ale.lives']
 
             if current_lives != previous_lives:
-                reward_multiplier /= 2.0
-                reward = -10.0
+                reward = -30.0
 
             # Observe new state
             if not done:
-                frames = frames[1:] + self.env.get_frames(1)
+                new_frames, _ = self.env.get_frames(1)
+                frames = frames[1:] + new_frames
                 next_state = torch.cat(frames, dim=1)
             else:
                 next_state = None
@@ -160,7 +157,6 @@ class AgentTrainer(object):
             if self.useGPU is True:
                 reward = reward.cuda()
             reward = Variable(reward)
-            reward = F.tanh(reward)
 
             # Store the transition in memory
             self.memory.push(state.data, action, next_state, reward)
@@ -236,7 +232,7 @@ class AgentTrainer(object):
 
         # Clip gradients
         for param in self.model.parameters():
-            param.grad.data.clamp_(-1, 1)
+            param.grad.data.clamp_(-self.params.max_grad_val, self.params.max_grad_val)
 
         # Weight Update
         self.optimizer.step()

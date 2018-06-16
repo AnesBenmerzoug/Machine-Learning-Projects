@@ -1,26 +1,22 @@
 # Project Parameters
 
 # Model Parameters
-batch_size: 32
+batch_size: 64
 savedModelDir: './trained_models/'
-testModelPath: './trained_models/'
-
-# Dataset Parameters
-datasetDir: './data/'
-num_workers: 2
+testModelPath: './trained_models/Trained_Model_900_Episodes'
 
 # Replay Memory Parameters
 replayMemoryCapacity: 30000
 
 # Training Parameters
-trainModel: True
+trainModel: False
 useGPU: False
 resumeTraining: False
 num_episodes: 1000
 num_steps_per_episode: 1000
-max_norm: 40
+max_grad_val: 1
 gamma: 0.99
-target_update: 50
+target_update: 100
 
 # Epsilon Greedy Policy Parameters
 epsilon_start: 0.9
