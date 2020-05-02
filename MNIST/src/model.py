@@ -10,6 +10,7 @@ class MNIST_Network(Module):
     and a fully connected layer that will use their outputs to generate the class conditional probability
     using a softmax non-linearity
     """
+
     def __init__(self, params):
         super(MNIST_Network, self).__init__()
         # Module Parameters
@@ -20,13 +21,24 @@ class MNIST_Network(Module):
         hidden_size = self.params.hidden_size
         output_size = self.params.output_size
         # LSTM Layers
-        self.horizontal_layer = LSTM(input_size=image_height, hidden_size=hidden_size,
-                                     bidirectional=True, batch_first=True, bias=True)
-        self.vertical_layer = LSTM(input_size=image_width, hidden_size=hidden_size,
-                                   bidirectional=True, batch_first=True, bias=True)
+        self.horizontal_layer = LSTM(
+            input_size=image_height,
+            hidden_size=hidden_size,
+            bidirectional=True,
+            batch_first=True,
+            bias=True,
+        )
+        self.vertical_layer = LSTM(
+            input_size=image_width,
+            hidden_size=hidden_size,
+            bidirectional=True,
+            batch_first=True,
+            bias=True,
+        )
         # Output Layer
-        self.output_layer = Linear(in_features=4 * hidden_size * image_height,
-                                   out_features=output_size)
+        self.output_layer = Linear(
+            in_features=4 * hidden_size * image_height, out_features=output_size
+        )
 
         # Initialize Parameters
         self.reset_parameters()
@@ -61,10 +73,10 @@ class MNIST_Network(Module):
 
     @classmethod
     def load_model(cls, package, useGPU=False):
-        parameters = package['params']
-        params = namedtuple('Parameters', (parameters.keys()))(*parameters.values())
+        parameters = package["params"]
+        params = namedtuple("Parameters", (parameters.keys()))(*parameters.values())
         model = cls(params)
-        model.load_state_dict(package['state_dict'])
+        model.load_state_dict(package["state_dict"])
         # Replace NaN parameters with random values
         for parameter in model.parameters():
             if len(parameter.size()) == 2:

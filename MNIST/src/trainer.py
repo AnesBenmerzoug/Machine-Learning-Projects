@@ -22,21 +22,33 @@ class MNISTTrainer(object):
         self.params = parameters
 
         # Transform applied to each image
-        transform = transforms.Compose([transforms.ToTensor(), ImageTransform(self.params)])
+        transform = transforms.Compose(
+            [transforms.ToTensor(), ImageTransform(self.params)]
+        )
 
         # Initialize datasets
-        self.trainset = MNIST(root=self.params.datasetDir, train=True,
-                              download=True, transform=transform)
-        self.testset = MNIST(root=self.params.datasetDir, train=False,
-                             download=True, transform=transform)
+        self.trainset = MNIST(
+            root=self.params.datasetDir, train=True, download=True, transform=transform
+        )
+        self.testset = MNIST(
+            root=self.params.datasetDir, train=False, download=True, transform=transform
+        )
 
         # Initialize loaders
-        self.trainloader = DataLoader(self.trainset, batch_size=self.params.batch_size,
-                                      shuffle=False, num_workers=self.params.num_workers,
-                                      sampler=RandomSampler(self.trainset))
+        self.trainloader = DataLoader(
+            self.trainset,
+            batch_size=self.params.batch_size,
+            shuffle=False,
+            num_workers=self.params.num_workers,
+            sampler=RandomSampler(self.trainset),
+        )
 
-        self.testloader = DataLoader(self.testset, batch_size=self.params.batch_size,
-                                     shuffle=False, num_workers=self.params.num_workers)
+        self.testloader = DataLoader(
+            self.testset,
+            batch_size=self.params.batch_size,
+            shuffle=False,
+            num_workers=self.params.num_workers,
+        )
 
         # Checking for GPU
         self.useGPU = self.params.useGPU and torch.cuda.is_available()
@@ -49,7 +61,7 @@ class MNISTTrainer(object):
             print("Resuming Training")
             self.load_model(self.useGPU)
 
-        if self.params.optimizer == 'SVRG':
+        if self.params.optimizer == "SVRG":
             self.snapshot_model = deepcopy(self.model)
 
         print(self.model)
@@ -62,19 +74,19 @@ class MNISTTrainer(object):
             print("Using GPU")
             try:
                 self.model.cuda()
-                if self.params.optimizer == 'SVRG':
+                if self.params.optimizer == "SVRG":
                     self.snapshot_model.cuda()
             except RuntimeError:
                 print("Failed to find GPU. Using CPU instead")
                 self.useGPU = False
                 self.model.cpu()
-                if self.params.optimizer == 'SVRG':
+                if self.params.optimizer == "SVRG":
                     self.snapshot_model.cpu()
             except UserWarning:
                 print("GPU is too old. Using CPU instead")
                 self.useGPU = False
                 self.model.cpu()
-                if self.params.optimizer == 'SVRG':
+                if self.params.optimizer == "SVRG":
                     self.snapshot_model.cpu()
         else:
             print("Using CPU")
@@ -102,6 +114,7 @@ class MNISTTrainer(object):
             # Clip gradients
             clip_grad_norm(self.snapshot_model.parameters(), self.params.max_norm)
             return snapshot_loss
+
         return closure
 
     def train_model(self):
@@ -111,11 +124,13 @@ class MNISTTrainer(object):
         for epoch in range(self.params.num_epochs):
             print("Epoch {}".format(epoch + 1))
 
-            if self.params.optimizer == 'SVRG':
+            if self.params.optimizer == "SVRG":
                 # Update SVRG snapshot
-                self.optimizer.update_snapshot(dataloader=self.trainloader, closure=self.snapshot_closure())
+                self.optimizer.update_snapshot(
+                    dataloader=self.trainloader, closure=self.snapshot_closure()
+                )
 
-            print("Learning Rate= {}".format(self.optimizer.param_groups[0]['lr']))
+            print("Learning Rate= {}".format(self.optimizer.param_groups[0]["lr"]))
 
             # Set mode to training
             self.model.train()
@@ -130,7 +145,9 @@ class MNISTTrainer(object):
 
             # Go through the test set
             test_accuracy = self.test_epoch()
-            print("In Epoch {}, Obtained Accuracy {:.2f}".format(epoch + 1, test_accuracy))
+            print(
+                "In Epoch {}, Obtained Accuracy {:.2f}".format(epoch + 1, test_accuracy)
+            )
             if max_accuracy is None or max_accuracy < test_accuracy:
                 max_accuracy = test_accuracy
                 best_model = self.model.state_dict()
@@ -168,7 +185,7 @@ class MNISTTrainer(object):
             loss.backward()
             # Clip gradients
             clip_grad_norm(self.model.parameters(), self.params.max_norm)
-            if self.params.optimizer == 'SVRG':
+            if self.params.optimizer == "SVRG":
                 # Snapshot Model Forward Backward
                 snapshot_output = self.snapshot_model(inputs)
                 snapshot_loss = self.criterion(snapshot_output, labels)
@@ -187,7 +204,7 @@ class MNISTTrainer(object):
     def test_epoch(self):
         correct = 0
         total = 0
-        for (data) in self.testloader:
+        for data in self.testloader:
             # Split data tuple
             inputs, labels = data
             # Wrap it in Variables
@@ -205,39 +222,57 @@ class MNISTTrainer(object):
 
     def save_model(self, model_parameters, model_accuracy):
         self.model.load_state_dict(model_parameters)
-        torch.save(self.serialize(),
-                   os.path.join(self.params.savedModelDir, 'Trained_Model_{}'.format(int(model_accuracy))
-                                + '_' + time.strftime("%d.%m.20%y_%H.%M")))
+        torch.save(
+            self.serialize(),
+            os.path.join(
+                self.params.savedModelDir,
+                "Trained_Model_{}".format(int(model_accuracy))
+                + "_"
+                + time.strftime("%d.%m.20%y_%H.%M"),
+            ),
+        )
 
     def load_model(self, useGPU=False):
-        package = torch.load(self.params.trainedModelPath, map_location=lambda storage, loc: storage)
+        package = torch.load(
+            self.params.trainedModelPath, map_location=lambda storage, loc: storage
+        )
         self.model = MNIST_Network.load_model(package, useGPU)
-        parameters = package['params']
-        self.params = namedtuple('Parameters', (parameters.keys()))(*parameters.values())
+        parameters = package["params"]
+        self.params = namedtuple("Parameters", (parameters.keys()))(
+            *parameters.values()
+        )
         self.optimizer = self.optimizer_select()
 
     def serialize(self):
         model_is_cuda = next(self.model.parameters()).is_cuda
         model = self.model.cpu() if model_is_cuda else self.model
         package = {
-            'state_dict': model.state_dict(),
-            'params': self.params._asdict(),
-            'optim_dict': self.optimizer.state_dict()
+            "state_dict": model.state_dict(),
+            "params": self.params._asdict(),
+            "optim_dict": self.optimizer.state_dict(),
         }
         return package
 
     def optimizer_select(self):
-        if self.params.optimizer == 'Adam':
+        if self.params.optimizer == "Adam":
             return optim.Adam(self.model.parameters(), lr=self.params.learning_rate)
-        elif self.params.optimizer == 'Adadelta':
+        elif self.params.optimizer == "Adadelta":
             return optim.Adadelta(self.model.parameters(), lr=self.params.learning_rate)
-        elif self.params.optimizer == 'SGD':
-            return optim.SGD(self.model.parameters(), lr=self.params.learning_rate,
-                             momentum=self.params.momentum, nesterov=self.params.nesterov)
-        elif self.params.optimizer == 'SVRG':
-            return SVRG(self.model.parameters(), self.snapshot_model.parameters(),
-                        lr=self.params.learning_rate, momentum=self.params.momentum,
-                        nesterov=self.params.nesterov, update_frequency=self.params.update_frequency)
+        elif self.params.optimizer == "SGD":
+            return optim.SGD(
+                self.model.parameters(),
+                lr=self.params.learning_rate,
+                momentum=self.params.momentum,
+                nesterov=self.params.nesterov,
+            )
+        elif self.params.optimizer == "SVRG":
+            return SVRG(
+                self.model.parameters(),
+                self.snapshot_model.parameters(),
+                lr=self.params.learning_rate,
+                momentum=self.params.momentum,
+                nesterov=self.params.nesterov,
+                update_frequency=self.params.update_frequency,
+            )
         else:
             raise NotImplementedError
-

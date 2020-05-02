@@ -12,9 +12,9 @@ if __name__ == "__main__":
     # To have a more verbose output in case of an exception
     faulthandler.enable()
 
-    with open('parameters.yaml', 'r') as params_file:
+    with open("parameters.yaml", "r") as params_file:
         parameters = yaml.safe_load(params_file)
-        parameters = namedtuple('Parameters', (parameters.keys()))(*parameters.values())
+        parameters = namedtuple("Parameters", (parameters.keys()))(*parameters.values())
 
     if parameters.trainModel is True:
         # Instantiating the trainer
@@ -22,7 +22,12 @@ if __name__ == "__main__":
         # Training the model
         avg_losses = trainer.train_model()
         # Plot losses
-        plotlosses(avg_losses, title='Average Loss per Epoch', xlabel='Epoch', ylabel='Average Loss')
+        plotlosses(
+            avg_losses,
+            title="Average Loss per Epoch",
+            xlabel="Epoch",
+            ylabel="Average Loss",
+        )
 
     else:
         # Instantiating the test
@@ -37,12 +42,20 @@ if __name__ == "__main__":
             print("Accuracy for class {}: {:.2f}".format(i, class_accuracy[i]))
 
         # Plot Per Class Accuracy
-        plotaccuracy(class_accuracy, classes=tester.classes, title='Classification Accuracy per Class',
-                     xlabel='Class', ylabel='Accuracy')
+        plotaccuracy(
+            class_accuracy,
+            classes=tester.classes,
+            title="Classification Accuracy per Class",
+            xlabel="Class",
+            ylabel="Accuracy",
+        )
 
         # Plot Confusion Matrix
-        plotconfusion(confusion_matrix, classes=tester.classes,
-                      xlabel='True Class', ylabel='Predicted Class')
+        plotconfusion(
+            confusion_matrix,
+            classes=tester.classes,
+            xlabel="True Class",
+            ylabel="Predicted Class",
+        )
 
     print("Finishing time: {}".format(time.asctime()))
-

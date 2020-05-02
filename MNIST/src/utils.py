@@ -1,4 +1,3 @@
-from __future__ import print_function, division
 from torchvision.utils import make_grid
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -10,7 +9,7 @@ def imgshow(img):
     plt.show()
 
 
-def plotlosses(losses, title='', xlabel='', ylabel=''):
+def plotlosses(losses, title="", xlabel="", ylabel=""):
     epochs = np.arange(losses.size) + 1
     plt.plot(epochs, losses)
     plt.xlabel(xlabel)
@@ -19,20 +18,27 @@ def plotlosses(losses, title='', xlabel='', ylabel=''):
     plt.show()
 
 
-def plotaccuracy(accuracy, classes, title='', xlabel='', ylabel=''):
+def plotaccuracy(accuracy, classes, title="", xlabel="", ylabel=""):
     indices = np.arange(len(classes))
     width = 0.35
     bar = plt.bar(indices, accuracy, width)
     for idx, rect in enumerate(bar):
         height = rect.get_height()
-        plt.text(rect.get_x() + rect.get_width() / 2.0, height, '{:.2f}'.format(accuracy[idx]), ha='center', va='bottom')
+        plt.text(
+            rect.get_x() + rect.get_width() / 2.0,
+            height,
+            "{:.2f}".format(accuracy[idx]),
+            ha="center",
+            va="bottom",
+        )
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.title(title)
     plt.xticks(indices, classes)
     plt.show()
 
-def plotconfusion(confusion_matrix, classes, title='', xlabel='', ylabel=''):
+
+def plotconfusion(confusion_matrix, classes, title="", xlabel="", ylabel=""):
     fig = plt.figure()
     ax = fig.add_subplot(111)
     cax = ax.matshow(confusion_matrix)
@@ -40,8 +46,8 @@ def plotconfusion(confusion_matrix, classes, title='', xlabel='', ylabel=''):
     tick_marks = np.arange(len(classes))
     ax.set_xticks(tick_marks)
     ax.set_yticks(tick_marks)
-    ax.set_xticklabels([''] + list(classes), rotation=90)
-    ax.set_yticklabels([''] + list(classes))
+    ax.set_xticklabels([""] + list(classes), rotation=90)
+    ax.set_yticklabels([""] + list(classes))
     # Force label at every tick
     ax.xaxis.set_major_locator(ticker.MultipleLocator(1))
     ax.yaxis.set_major_locator(ticker.MultipleLocator(1))

@@ -13,18 +13,25 @@ import random
 class MNISTTester(object):
     def __init__(self, parameters):
         self.params = parameters
-        self.classes = ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
+        self.classes = ("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")
 
         # Transform applied to each image
-        transform = transforms.Compose([transforms.ToTensor(), ImageTransform(self.params)])
+        transform = transforms.Compose(
+            [transforms.ToTensor(), ImageTransform(self.params)]
+        )
 
         # Initialize datasets
-        self.testset = MNIST(root=self.params.datasetDir, train=False,
-                             download=True, transform=transform)
+        self.testset = MNIST(
+            root=self.params.datasetDir, train=False, download=True, transform=transform
+        )
 
         # Initialize loaders
-        self.testloader = DataLoader(self.testset, batch_size=self.params.batch_size,
-                                     shuffle=False, num_workers=self.params.num_workers)
+        self.testloader = DataLoader(
+            self.testset,
+            batch_size=self.params.batch_size,
+            shuffle=False,
+            num_workers=self.params.num_workers,
+        )
 
         # Checking for GPU
         self.useGPU = self.params.useGPU and torch.cuda.is_available()
@@ -56,9 +63,9 @@ class MNISTTester(object):
         correct = 0
         total = 0
         confusion_matrix = [[0] * 10 for i in range(10)]
-        class_correct = [0]*10
-        class_total = [0]*10
-        for (data) in self.testloader:
+        class_correct = [0] * 10
+        class_total = [0] * 10
+        for data in self.testloader:
             # Split data tuple
             inputs, labels = data
             # Wrap it in Variables
@@ -78,9 +85,17 @@ class MNISTTester(object):
                 class_total[label.data[0]] += 1
                 confusion_matrix[label.data[0]][guess_i] += 1
         total_accuracy = correct / total * 100.0
-        class_accuracy = [class_correct[k] / class_total[k] * 100.0 if class_total[k] != 0 else 0.0 for k in range(10)]
-        confusion_matrix = [[confusion_matrix[i][j] / class_total[i] for j in range(len(confusion_matrix[i]))]
-                            for i in range(len(confusion_matrix))]
+        class_accuracy = [
+            class_correct[k] / class_total[k] * 100.0 if class_total[k] != 0 else 0.0
+            for k in range(10)
+        ]
+        confusion_matrix = [
+            [
+                confusion_matrix[i][j] / class_total[i]
+                for j in range(len(confusion_matrix[i]))
+            ]
+            for i in range(len(confusion_matrix))
+        ]
         return total_accuracy, class_accuracy, confusion_matrix
 
     def test_random_sample(self):
@@ -92,15 +107,28 @@ class MNISTTester(object):
             data.append(dataiter.next())
         random.shuffle(data)
         images, labels = data[random.randint(0, len(data) - 1)]
-        print('GroundTruth: ', ' '.join('%5s' % self.classes[labels[j]] for j in range(int(images.size(0)))))
+        print(
+            "GroundTruth: ",
+            " ".join(
+                "%5s" % self.classes[labels[j]] for j in range(int(images.size(0)))
+            ),
+        )
         images, labels = Variable(images), Variable(labels)
         outputs = self.model(images)
         _, predicted = torch.max(outputs.data, 1)
-        print('Predicted:     ', ' '.join('%5s' % self.classes[predicted[j]] for j in range(int(images.size(0)))))
+        print(
+            "Predicted:     ",
+            " ".join(
+                "%5s" % self.classes[predicted[j]] for j in range(int(images.size(0)))
+            ),
+        )
 
     def load_model(self, useGPU=False):
-        package = torch.load(self.params.testModelPath, map_location=lambda storage, loc: storage)
+        package = torch.load(
+            self.params.testModelPath, map_location=lambda storage, loc: storage
+        )
         self.model = MNIST_Network.load_model(package, useGPU)
-        parameters = package['params']
-        self.params = namedtuple('Parameters', (parameters.keys()))(*parameters.values())
-
+        parameters = package["params"]
+        self.params = namedtuple("Parameters", (parameters.keys()))(
+            *parameters.values()
+        )

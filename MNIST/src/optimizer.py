@@ -19,8 +19,18 @@ class SVRG(Optimizer):
         nesterov (bool, optional): enables Nesterov momentum (default: False)
         update_frequency (int, optional): determines after how many epochs the snapshot should be updated (default: 1)
     """
-    def __init__(self, params, snapshot_params=None, lr=required, momentum=0, dampening=0,
-                 weight_decay=0, nesterov=False, update_frequency=1):
+
+    def __init__(
+        self,
+        params,
+        snapshot_params=None,
+        lr=required,
+        momentum=0,
+        dampening=0,
+        weight_decay=0,
+        nesterov=False,
+        update_frequency=1,
+    ):
         if not 0.0 <= lr:
             raise ValueError("Invalid learning rate: {}".format(lr))
         if momentum < 0.0:
@@ -30,12 +40,21 @@ class SVRG(Optimizer):
         if nesterov and (momentum <= 0 or dampening != 0):
             raise ValueError("Nesterov momentum requires a momentum and zero dampening")
         if update_frequency < 0.0:
-            raise ValueError("Invalid update_frequency value: {}".format(update_frequency))
+            raise ValueError(
+                "Invalid update_frequency value: {}".format(update_frequency)
+            )
         if not isinstance(update_frequency, int):
-            raise TypeError("Invalid update_frequency type: {}".format(type(update_frequency)))
+            raise TypeError(
+                "Invalid update_frequency type: {}".format(type(update_frequency))
+            )
 
-        defaults = dict(lr=lr, momentum=momentum, dampening=dampening,
-                        weight_decay=weight_decay, nesterov=nesterov)
+        defaults = dict(
+            lr=lr,
+            momentum=momentum,
+            dampening=dampening,
+            weight_decay=weight_decay,
+            nesterov=nesterov,
+        )
         super(SVRG, self).__init__(params, defaults)
 
         # Store the update_frequency parameter
@@ -48,24 +67,26 @@ class SVRG(Optimizer):
         if len(snapshot_param_group) == 0:
             raise ValueError("optimizer got an empty snapshot parameter list")
         if not isinstance(snapshot_param_group[0], dict):
-            snapshot_param_group = [{'snapshot_params': snapshot_param_group}]
+            snapshot_param_group = [{"snapshot_params": snapshot_param_group}]
 
         for param_group in snapshot_param_group:
-            snapshot_params = param_group['snapshot_params']
+            snapshot_params = param_group["snapshot_params"]
             if isinstance(snapshot_params, Variable):
-                snapshot_param_group['snapshot_params'] = [snapshot_params]
+                snapshot_param_group["snapshot_params"] = [snapshot_params]
             elif isinstance(snapshot_params, set):
-                raise TypeError('optimizer parameters need to be organized in ordered collections, but '
-                                'the ordering of tensors in sets will change between runs. Please use a list instead.')
+                raise TypeError(
+                    "optimizer parameters need to be organized in ordered collections, but "
+                    "the ordering of tensors in sets will change between runs. Please use a list instead."
+                )
             else:
-                param_group['snapshot_params'] = list(snapshot_params)
+                param_group["snapshot_params"] = list(snapshot_params)
 
         # Add the snapshot_params and the average gradient to the parameter groups
         for idx, group in enumerate(self.param_groups):
-            group['snapshot_params'] = snapshot_param_group[idx]['snapshot_params']
-            group['average_gradient'] = list()
-            for p in group['params']:
-                group['average_gradient'].append(torch.zeros_like(p.data))
+            group["snapshot_params"] = snapshot_param_group[idx]["snapshot_params"]
+            group["average_gradient"] = list()
+            for p in group["params"]:
+                group["average_gradient"].append(torch.zeros_like(p.data))
 
     def step(self, closure=None):
         r"""Performs a single optimization step.
@@ -79,17 +100,17 @@ class SVRG(Optimizer):
             loss, snapshot_loss = closure()
 
         for group in self.param_groups:
-            weight_decay = group['weight_decay']
-            momentum = group['momentum']
-            dampening = group['dampening']
-            nesterov = group['nesterov']
-            for idx, p in enumerate(group['params']):
+            weight_decay = group["weight_decay"]
+            momentum = group["momentum"]
+            dampening = group["dampening"]
+            nesterov = group["nesterov"]
+            for idx, p in enumerate(group["params"]):
                 if p.grad is None:
                     continue
                 if p.grad.data.is_sparse:
                     raise RuntimeError("SVRG doesn't support sparse gradients")
-                snapshot_params = group['snapshot_params'][idx]
-                average_gradient = group['average_gradient'][idx]
+                snapshot_params = group["snapshot_params"][idx]
+                average_gradient = group["average_gradient"][idx]
                 # gradient data
                 d_p = p.grad.data
                 # subtract the average gradient
@@ -101,18 +122,18 @@ class SVRG(Optimizer):
                     d_p.add_(weight_decay, p.data)
                 if momentum != 0:
                     param_state = self.state[p]
-                    if 'momentum_buffer' not in param_state:
-                        buf = param_state['momentum_buffer'] = torch.zeros_like(p.data)
+                    if "momentum_buffer" not in param_state:
+                        buf = param_state["momentum_buffer"] = torch.zeros_like(p.data)
                         buf.mul_(momentum).add_(d_p)
                     else:
-                        buf = param_state['momentum_buffer']
+                        buf = param_state["momentum_buffer"]
                         buf.mul_(momentum).add_(1 - dampening, d_p)
                     if nesterov:
                         d_p = d_p.add(momentum, buf)
                     else:
                         d_p = buf
 
-                p.data.add_(-group['lr'], d_p)
+                p.data.add_(-group["lr"], d_p)
 
         return loss
 
@@ -136,25 +157,27 @@ class SVRG(Optimizer):
         self.zero_grad()
         # Take a snapshot of the latest parameters
         for group in self.param_groups:
-            for p, sp in zip(group['params'], group['snapshot_params']):
+            for p, sp in zip(group["params"], group["snapshot_params"]):
                 sp.data.copy_(p.data)
         # Iterate over all the dataset to compute the average gradient
         for i, (data, target) in enumerate(dataloader):
             closure(data, target)
             for group in self.param_groups:
-                for idx, p in enumerate(group['snapshot_params']):
+                for idx, p in enumerate(group["snapshot_params"]):
                     if p.grad is None:
                         continue
                     if i == 0:
-                        group['average_gradient'][idx].zero_()
-                    group['average_gradient'][idx].add_(1/len(dataloader), p.grad.data)
+                        group["average_gradient"][idx].zero_()
+                    group["average_gradient"][idx].add_(
+                        1 / len(dataloader), p.grad.data
+                    )
         # Zero the gradient of the parameters
         self.zero_grad()
 
     def zero_grad(self):
         r"""Clears the gradients of all optimized :class:`Variable` s."""
         for group in self.param_groups:
-            for p, sp in zip(group['params'], group['snapshot_params']):
+            for p, sp in zip(group["params"], group["snapshot_params"]):
                 if p.grad is not None:
                     p.grad.detach_()
                     p.grad.zero_()
