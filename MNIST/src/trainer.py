@@ -7,9 +7,8 @@ from torch.utils.data import DataLoader
 from torch.utils.data.sampler import RandomSampler
 from torchvision.datasets import MNIST
 from torchvision.transforms import transforms
-from src.imageTransform import ImageTransform
-from src.model import MNIST_Network
-from src.optimizer import SVRG
+from .imageTransform import ImageTransform
+from .model import MNIST_Network
 from torch.nn.utils import clip_grad_norm
 from collections import namedtuple
 from copy import deepcopy
@@ -17,7 +16,7 @@ import time
 import os
 
 
-class MNISTTrainer(object):
+class MNISTTrainer:
     def __init__(self, parameters):
         self.params = parameters
 
@@ -124,12 +123,6 @@ class MNISTTrainer(object):
         for epoch in range(self.params.num_epochs):
             print("Epoch {}".format(epoch + 1))
 
-            if self.params.optimizer == "SVRG":
-                # Update SVRG snapshot
-                self.optimizer.update_snapshot(
-                    dataloader=self.trainloader, closure=self.snapshot_closure()
-                )
-
             print("Learning Rate= {}".format(self.optimizer.param_groups[0]["lr"]))
 
             # Set mode to training
@@ -170,28 +163,20 @@ class MNISTTrainer(object):
             # Main Model Forward Step
             output = self.model(inputs)
             # Loss Computation
-            entropy = self.entropy(output)
-            loss = self.criterion(output, labels) - 0.1 * entropy
+            loss = self.criterion(output, labels)
             inf = float("inf")
-            if loss.data[0] == inf or loss.data[0] == -inf:
+            if loss.data.item() == inf or loss.data.item() == -inf:
                 print("Warning, received inf loss. Skipping it")
-            elif loss.data[0] != loss.data[0]:
+            elif loss.data.item() != loss.data.item():
                 print("Warning, received nan loss.")
             else:
-                losses = losses + loss.data[0]
+                losses = losses + loss.data.item()
             # Zero the optimizer gradient
             self.optimizer.zero_grad()
             # Backward step
             loss.backward()
             # Clip gradients
             clip_grad_norm(self.model.parameters(), self.params.max_norm)
-            if self.params.optimizer == "SVRG":
-                # Snapshot Model Forward Backward
-                snapshot_output = self.snapshot_model(inputs)
-                snapshot_loss = self.criterion(snapshot_output, labels)
-                self.snapshot_model.zero_grad()
-                snapshot_loss.backward()
-                clip_grad_norm(self.snapshot_model.parameters(), self.params.max_norm)
             # Weight Update
             self.optimizer.step()
             if self.useGPU is True:
@@ -217,7 +202,7 @@ class MNISTTrainer(object):
             total += labels.size()[0]
             correct += torch.sum(predicted == labels.data)
             del outputs, inputs, labels, data
-        total_accuracy = correct / total * 100.0
+        total_accuracy = correct * 1.0 / total * 100.0
         return total_accuracy
 
     def save_model(self, model_parameters, model_accuracy):
@@ -265,14 +250,5 @@ class MNISTTrainer(object):
                 momentum=self.params.momentum,
                 nesterov=self.params.nesterov,
             )
-        elif self.params.optimizer == "SVRG":
-            return SVRG(
-                self.model.parameters(),
-                self.snapshot_model.parameters(),
-                lr=self.params.learning_rate,
-                momentum=self.params.momentum,
-                nesterov=self.params.nesterov,
-                update_frequency=self.params.update_frequency,
-            )
         else:
-            raise NotImplementedError
+            raise NotImplementedError()

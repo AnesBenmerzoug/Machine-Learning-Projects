@@ -3,14 +3,13 @@ from torch.autograd import Variable
 from torch.utils.data import DataLoader
 from torchvision.datasets import MNIST
 from torchvision.transforms import transforms
-from src.imageTransform import ImageTransform
-from src.model import MNIST_Network
-from src.utils import imgshow
+from .imageTransform import ImageTransform
+from .model import MNIST_Network
 from collections import namedtuple
 import random
 
 
-class MNISTTester(object):
+class MNISTTester:
     def __init__(self, parameters):
         self.params = parameters
         self.classes = ("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")
@@ -81,12 +80,14 @@ class MNISTTester(object):
             for j in range(int(inputs.size(0))):
                 label = labels[j]
                 guess_i = guesses[j]
-                class_correct[label.data[0]] += c[j]
-                class_total[label.data[0]] += 1
-                confusion_matrix[label.data[0]][guess_i] += 1
-        total_accuracy = correct / total * 100.0
+                class_correct[label.data.item()] += c[j]
+                class_total[label.data.item()] += 1
+                confusion_matrix[label.data.item()][guess_i] += 1
+        total_accuracy = correct * 1.0 / total * 100.0
         class_accuracy = [
-            class_correct[k] / class_total[k] * 100.0 if class_total[k] != 0 else 0.0
+            class_correct[k] * 1.0 / class_total[k] * 100.0
+            if class_total[k] != 0
+            else 0.0
             for k in range(10)
         ]
         confusion_matrix = [

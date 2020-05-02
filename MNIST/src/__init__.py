@@ -1,3 +1,3 @@
-from src.trainer import MNISTTrainer
-from src.tester import MNISTTester
-from src.utils import *
+from .trainer import MNISTTrainer
+from .tester import MNISTTester
+from .utils import *

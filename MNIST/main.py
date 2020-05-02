@@ -1,4 +1,3 @@
-from __future__ import print_function, division
 from collections import namedtuple
 import faulthandler
 import yaml
