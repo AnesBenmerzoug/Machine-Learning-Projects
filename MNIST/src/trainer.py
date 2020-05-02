@@ -11,7 +11,6 @@ from .imageTransform import ImageTransform
 from .model import MNIST_Network
 from torch.nn.utils import clip_grad_norm
 from collections import namedtuple
-from copy import deepcopy
 import time
 import os
 
@@ -60,9 +59,6 @@ class MNISTTrainer:
             print("Resuming Training")
             self.load_model(self.useGPU)
 
-        if self.params.optimizer == "SVRG":
-            self.snapshot_model = deepcopy(self.model)
-
         print(self.model)
 
         print("Number of parameters = {}".format(self.model.num_parameters()))
@@ -73,20 +69,14 @@ class MNISTTrainer:
             print("Using GPU")
             try:
                 self.model.cuda()
-                if self.params.optimizer == "SVRG":
-                    self.snapshot_model.cuda()
             except RuntimeError:
                 print("Failed to find GPU. Using CPU instead")
                 self.useGPU = False
                 self.model.cpu()
-                if self.params.optimizer == "SVRG":
-                    self.snapshot_model.cpu()
             except UserWarning:
                 print("GPU is too old. Using CPU instead")
                 self.useGPU = False
                 self.model.cpu()
-                if self.params.optimizer == "SVRG":
-                    self.snapshot_model.cpu()
         else:
             print("Using CPU")
 
