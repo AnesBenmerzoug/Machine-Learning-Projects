@@ -72,10 +72,8 @@ class MNIST_Network(Module):
         return num
 
     @classmethod
-    def load_model(cls, package, useGPU=False):
-        parameters = package["params"]
-        params = namedtuple("Parameters", (parameters.keys()))(*parameters.values())
-        model = cls(params)
+    def load_model(cls, package, parameters, use_gpu=False):
+        model = cls(parameters)
         model.load_state_dict(package["state_dict"])
         # Replace NaN parameters with random values
         for parameter in model.parameters():
@@ -85,6 +83,6 @@ class MNIST_Network(Module):
             else:
                 if float(parameter.data[0]) != float(parameter.data[0]):
                     torch.nn.init.uniform(parameter, -1.0, 1.0)
-        if useGPU is True:
+        if use_gpu is True:
             model = model.cuda()
         return model

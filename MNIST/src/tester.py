@@ -5,7 +5,6 @@ from torchvision.datasets import MNIST
 from torchvision.transforms import transforms
 from .imageTransform import ImageTransform
 from .model import MNIST_Network
-from collections import namedtuple
 import random
 
 
@@ -21,7 +20,10 @@ class MNISTTester:
 
         # Initialize datasets
         self.testset = MNIST(
-            root=self.params.datasetDir, train=False, download=True, transform=transform
+            root=self.params.dataset_dir,
+            train=False,
+            download=True,
+            transform=transform,
         )
 
         # Initialize loaders
@@ -33,26 +35,27 @@ class MNISTTester:
         )
 
         # Checking for GPU
-        self.useGPU = self.params.useGPU and torch.cuda.is_available()
+        self.use_gpu = self.params.use_gpu and torch.cuda.is_available()
 
         # Load Trained Model
-        self.load_model()
+        path = self.params.model_dir / "trained_model.pt"
+        self.load_model(path, self.use_gpu)
 
         print(self.model)
 
         print("Number of parameters = {}".format(self.model.num_parameters()))
 
-        if self.useGPU is True:
+        if self.use_gpu is True:
             print("Using GPU")
             try:
                 self.model.cuda()
             except RuntimeError:
                 print("Failed to find GPU. Using CPU instead")
-                self.useGPU = False
+                self.use_gpu = False
                 self.model.cpu()
             except UserWarning:
                 print("GPU is too old. Using CPU instead")
-                self.useGPU = False
+                self.use_gpu = False
                 self.model.cpu()
         else:
             print("Using CPU")
@@ -68,7 +71,7 @@ class MNISTTester:
             # Split data tuple
             inputs, labels = data
             # Wrap it in Variables
-            if self.useGPU is True:
+            if self.use_gpu is True:
                 inputs, labels = inputs.cuda(), labels.cuda()
             inputs, labels = Variable(inputs), Variable(labels)
             # Forward step
@@ -114,6 +117,8 @@ class MNISTTester:
                 "%5s" % self.classes[labels[j]] for j in range(int(images.size(0)))
             ),
         )
+        if self.use_gpu is True:
+            images, labels = images.cuda(), labels.cuda()
         images, labels = Variable(images), Variable(labels)
         outputs = self.model(images)
         _, predicted = torch.max(outputs.data, 1)
@@ -124,12 +129,6 @@ class MNISTTester:
             ),
         )
 
-    def load_model(self, useGPU=False):
-        package = torch.load(
-            self.params.testModelPath, map_location=lambda storage, loc: storage
-        )
-        self.model = MNIST_Network.load_model(package, useGPU)
-        parameters = package["params"]
-        self.params = namedtuple("Parameters", (parameters.keys()))(
-            *parameters.values()
-        )
+    def load_model(self, path, use_gpu=False):
+        package = torch.load(path, map_location=lambda storage, loc: storage)
+        self.model = MNIST_Network.load_model(package, self.params, use_gpu)

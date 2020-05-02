@@ -10,8 +10,6 @@ from torchvision.transforms import transforms
 from .imageTransform import ImageTransform
 from .model import MNIST_Network
 from torch.nn.utils import clip_grad_norm
-from collections import namedtuple
-import time
 import os
 
 
@@ -26,10 +24,13 @@ class MNISTTrainer:
 
         # Initialize datasets
         self.trainset = MNIST(
-            root=self.params.datasetDir, train=True, download=True, transform=transform
+            root=self.params.dataset_dir, train=True, download=True, transform=transform
         )
         self.testset = MNIST(
-            root=self.params.datasetDir, train=False, download=True, transform=transform
+            root=self.params.dataset_dir,
+            train=False,
+            download=True,
+            transform=transform,
         )
 
         # Initialize loaders
@@ -49,33 +50,28 @@ class MNISTTrainer:
         )
 
         # Checking for GPU
-        self.useGPU = self.params.useGPU and torch.cuda.is_available()
+        self.use_gpu = self.params.use_gpu and torch.cuda.is_available()
 
         # Initialize model
-        if self.params.resumeTraining is False:
-            print("Training New Model")
-            self.model = MNIST_Network(self.params)
-        else:
-            print("Resuming Training")
-            self.load_model(self.useGPU)
+        self.model = MNIST_Network(self.params)
 
         print(self.model)
 
         print("Number of parameters = {}".format(self.model.num_parameters()))
 
         # Checking for GPU
-        self.useGPU = self.params.useGPU and torch.cuda.is_available()
-        if self.useGPU is True:
+        self.use_gpu = self.params.use_gpu and torch.cuda.is_available()
+        if self.use_gpu is True:
             print("Using GPU")
             try:
                 self.model.cuda()
             except RuntimeError:
                 print("Failed to find GPU. Using CPU instead")
-                self.useGPU = False
+                self.use_gpu = False
                 self.model.cpu()
             except UserWarning:
                 print("GPU is too old. Using CPU instead")
-                self.useGPU = False
+                self.use_gpu = False
                 self.model.cpu()
         else:
             print("Using CPU")
@@ -115,7 +111,7 @@ class MNISTTrainer:
                 max_accuracy = test_accuracy
                 best_model = self.model.state_dict()
         # Saving trained model
-        self.save_model(best_model, max_accuracy)
+        self.save_model(best_model)
         return avg_losses
 
     def train_epoch(self):
@@ -127,7 +123,7 @@ class MNISTTrainer:
             # Split data tuple
             inputs, labels = data
             # Wrap it in Variables
-            if self.useGPU is True:
+            if self.use_gpu is True:
                 inputs, labels = inputs.cuda(), labels.cuda()
             inputs, labels = Variable(inputs), Variable(labels)
             # Main Model Forward Step
@@ -149,7 +145,7 @@ class MNISTTrainer:
             clip_grad_norm(self.model.parameters(), self.params.max_norm)
             # Weight Update
             self.optimizer.step()
-            if self.useGPU is True:
+            if self.use_gpu is True:
                 torch.cuda.synchronize()
             del inputs, labels, data, loss, output
         # Compute the average loss for this epoch
@@ -163,7 +159,7 @@ class MNISTTrainer:
             # Split data tuple
             inputs, labels = data
             # Wrap it in Variables
-            if self.useGPU is True:
+            if self.use_gpu is True:
                 inputs, labels = inputs.cuda(), labels.cuda()
             inputs, labels = Variable(inputs), Variable(labels)
             # Forward step
@@ -175,35 +171,17 @@ class MNISTTrainer:
         total_accuracy = correct * 1.0 / total * 100.0
         return total_accuracy
 
-    def save_model(self, model_parameters, model_accuracy):
+    def save_model(self, model_parameters):
         self.model.load_state_dict(model_parameters)
         torch.save(
-            self.serialize(),
-            os.path.join(
-                self.params.savedModelDir,
-                "Trained_Model_{}".format(int(model_accuracy))
-                + "_"
-                + time.strftime("%d.%m.20%y_%H.%M"),
-            ),
+            self.serialize(), os.path.join(self.params.model_dir, "trained_model.pt"),
         )
-
-    def load_model(self, useGPU=False):
-        package = torch.load(
-            self.params.trainedModelPath, map_location=lambda storage, loc: storage
-        )
-        self.model = MNIST_Network.load_model(package, useGPU)
-        parameters = package["params"]
-        self.params = namedtuple("Parameters", (parameters.keys()))(
-            *parameters.values()
-        )
-        self.optimizer = self.optimizer_select()
 
     def serialize(self):
         model_is_cuda = next(self.model.parameters()).is_cuda
         model = self.model.cpu() if model_is_cuda else self.model
         package = {
             "state_dict": model.state_dict(),
-            "params": self.params._asdict(),
             "optim_dict": self.optimizer.state_dict(),
         }
         return package
@@ -211,8 +189,6 @@ class MNISTTrainer:
     def optimizer_select(self):
         if self.params.optimizer == "Adam":
             return optim.Adam(self.model.parameters(), lr=self.params.learning_rate)
-        elif self.params.optimizer == "Adadelta":
-            return optim.Adadelta(self.model.parameters(), lr=self.params.learning_rate)
         elif self.params.optimizer == "SGD":
             return optim.SGD(
                 self.model.parameters(),
