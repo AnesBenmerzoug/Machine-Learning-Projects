@@ -8,12 +8,3 @@ This repository contains a few Machine Learning projects that I made using PyTor
 * [Reinforcement Learning:](Reinforcement-Learning)
   * [CartPole](Reinforcement-Learning/CartPole)
   * [Space Invaders](Reinforcement-Learning/SpaceInvaders)
-
-## Requierements
-
-```
-Python 3
-PyTorch 0.3.1
-torchvision 0.2.0
-gym 0.10.5
-```
