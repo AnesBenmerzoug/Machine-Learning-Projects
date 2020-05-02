@@ -86,26 +86,6 @@ class MNISTTrainer:
         # Criterion
         self.criterion = NLLLoss()
 
-    def snapshot_closure(self):
-        def closure(data, target):
-            # Wrap it in Variables
-            if self.useGPU is True:
-                data, target = data.cuda(), target.cuda()
-            data, target = Variable(data), Variable(target)
-            # Forward step
-            output = self.snapshot_model(data)
-            # Loss computation
-            snapshot_loss = self.criterion(output, target)
-            # Zero the optimizer gradient
-            self.optimizer.zero_grad()
-            # Backward step
-            snapshot_loss.backward()
-            # Clip gradients
-            clip_grad_norm(self.snapshot_model.parameters(), self.params.max_norm)
-            return snapshot_loss
-
-        return closure
-
     def train_model(self):
         max_accuracy = None
         best_model = None
