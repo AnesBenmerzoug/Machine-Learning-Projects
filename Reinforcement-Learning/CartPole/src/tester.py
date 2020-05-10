@@ -1,5 +1,4 @@
 import torch
-from torch.autograd import Variable
 from .agent import DQN
 from collections import namedtuple
 from .environment import CartPoleEnvironment
@@ -20,31 +19,17 @@ class AgentTester:
         )
         # Checking for GPU
         self.use_gpu = self.params.use_gpu and torch.cuda.is_available()
+        self.device = torch.device("cuda:0" if self.use_gpu else "cpu")
 
         # Load Trained Model
         path = self.params.model_dir / "trained_model.pt"
         self.model = self.load_model(path, self.env.action_space.n)
-
         self.model.eval()
+        self.model.to(self.device)
 
         print(self.model)
 
         print("Number of parameters = {}".format(self.model.num_parameters()))
-
-        if self.use_gpu is True:
-            print("Using GPU")
-            try:
-                self.model.cuda()
-            except RuntimeError:
-                print("Failed to find GPU. Using CPU instead")
-                self.use_gpu = False
-                self.model.cpu()
-            except UserWarning:
-                print("GPU is too old. Using CPU instead")
-                self.use_gpu = False
-                self.model.cpu()
-        else:
-            print("Using CPU")
 
     def test_model(self):
         self.model.eval()
@@ -56,15 +41,12 @@ class AgentTester:
         current_screen, original_screen = self.env.get_frame()
         screens.append(original_screen)
         state = current_screen - last_screen
+        state = state.to(self.device)
         done = False
         duration = 0
-        while not done:
+        while True:
             duration += 1
             self.env.render()
-            # Wrap the state in a Variable
-            if self.use_gpu is True:
-                state = state.cuda()
-            state = Variable(state, volatile=True)
             # Select and perform an action
             action = self.select_action(state)
             _, _, done, _ = self.env.step(action.item())
@@ -73,10 +55,12 @@ class AgentTester:
             last_screen = current_screen
             current_screen, original_screen = self.env.get_frame()
             screens.append(original_screen)
-            if not done:
-                next_state = current_screen - last_screen
-            else:
-                next_state = None
+
+            if done:
+                break
+
+            next_state = current_screen - last_screen
+            next_state = next_state.to(self.device)
 
             # Move to the next state
             state = next_state
@@ -89,7 +73,7 @@ class AgentTester:
         # Choose the action
         if random.random() < 0.05:
             action = self.env.action_space.sample()
-            action = Variable(torch.LongTensor([[action]]))
+            action = torch.tensor([[action]], dtype=torch.int64, device=self.device)
         else:
             action = self.model(state).max(1)[1].view(1, 1)
         return action

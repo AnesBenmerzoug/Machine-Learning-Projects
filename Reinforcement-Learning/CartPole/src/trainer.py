@@ -4,7 +4,6 @@ import torch.optim as optim
 from .agent import DQN
 from .environment import CartPoleEnvironment
 from .replaymemory import ReplayMemory
-from torch.autograd import Variable
 from torch.nn import SmoothL1Loss
 import torch.nn.functional as F
 from collections import namedtuple
@@ -31,36 +30,22 @@ class AgentTrainer:
 
         # Checking for GPU
         self.use_gpu = self.params.use_gpu and torch.cuda.is_available()
+        self.device = torch.device("cuda:0" if self.use_gpu else "cpu")
 
         # Initialize model
-        self.model = DQN(self.params, self.env.action_space.n)
+        self.model = DQN(self.env.action_space.n)
+        self.model.to(self.device)
 
         # Initilize Target Network
-        self.target_network = DQN(self.params, self.env.action_space.n)
+        self.target_network = DQN(self.env.action_space.n)
         self.target_network.load_state_dict(self.model.state_dict())
         self.target_network.eval()
+        self.target_network.to(self.device)
 
-        print(self.model)
+        print(f"Model:\n{self.model}")
+        print(f"Target Model:\n{self.target_network}")
 
-        print("Number of parameters = {}".format(self.model.num_parameters()))
-
-        if self.use_gpu is True:
-            print("Using GPU")
-            try:
-                self.model.cuda()
-                self.target_network.cuda()
-            except RuntimeError:
-                print("Failed to find GPU. Using CPU instead")
-                self.use_gpu = False
-                self.model.cpu()
-                self.target_network.cpu()
-            except UserWarning:
-                print("GPU is too old. Using CPU instead")
-                self.use_gpu = False
-                self.model.cpu()
-                self.target_network.cpu()
-        else:
-            print("Using CPU")
+        print(f"Number of parameters = {self.model.num_parameters()}")
 
         # Setup optimizer
         self.optimizer = self.optimizer_select()
@@ -86,7 +71,7 @@ class AgentTrainer:
         model_path = self.params.model_dir / "trained_model.pt"
         for episode in range(self.params.num_episodes):
             try:
-                print("Episode {}".format(episode + 1))
+                print(f"Episode {episode + 1}")
 
                 # Update learning rate
                 self.scheduler.step(episode)
@@ -107,9 +92,7 @@ class AgentTrainer:
                 print("Average loss= {}".format(avg_losses[episode]))
 
                 if (episode + 1) % 100 == 0:
-                    self.save_model(model_path, self.model.cpu().state_dict())
-                    if self.use_gpu:
-                        self.model = self.model.cuda()
+                    self.save_model(model_path, self.model.state_dict())
             except KeyboardInterrupt:
                 print("Training was interrupted")
                 break
@@ -128,30 +111,24 @@ class AgentTrainer:
         last_screen, _ = self.env.get_frame()
         current_screen, _ = self.env.get_frame()
         state = current_screen - last_screen
+        state = state.to(self.device)
         for step_index in range(1, self.params.num_steps_per_episode + 1):
-            # Wrap the state in a Variable
-            if self.use_gpu is True:
-                state = state.cuda()
-            state = Variable(state)
             # Select and perform an action
             action = self.select_action(state)
             _, reward, done, info = self.env.step(action.item())
             score += reward
             reward = score
 
+            if done:
+                break
+
             # Observe new state
             last_screen = current_screen
             current_screen, _ = self.env.get_frame()
-            if not done:
-                next_state = current_screen - last_screen
-            else:
-                next_state = None
-                reward = 0.0
 
-            reward = torch.Tensor([reward])
-            if self.use_gpu is True:
-                reward = reward.cuda()
-            reward = Variable(reward, requires_grad=False)
+            next_state = current_screen - last_screen
+            next_state = next_state.to(self.device)
+            reward = torch.tensor([reward], requires_grad=False, device=self.device)
             reward = F.tanh(reward)
 
             # Store the transition in memory
@@ -167,8 +144,7 @@ class AgentTrainer:
             # Update the target network
             if (step_index + 1) % self.params.target_update == 0:
                 self.target_network.load_state_dict(self.model.state_dict())
-                if self.use_gpu:
-                    self.target_network = self.target_network.cuda()
+                self.target_network = self.target_network.to(self.device)
 
             if done is True:
                 break
@@ -188,25 +164,19 @@ class AgentTrainer:
         batch = self.transition(*zip(*transitions))
 
         # Compute a mask of non-final states and concatenate the batch elements
-        non_final_mask = torch.ByteTensor(
-            tuple(map(lambda s: s is not None, batch.next_state))
+        non_final_mask = torch.tensor(
+            tuple(map(lambda s: s is not None, batch.next_state)),
+            dtype=torch.uint8,
+            device=self.device,
         )
         non_final_next_states = torch.cat(
             [s for s in batch.next_state if s is not None]
         )
-        if self.use_gpu is True:
-            non_final_mask = non_final_mask.cuda()
-            non_final_next_states = non_final_next_states.cuda()
-        non_final_next_states = Variable(non_final_next_states)
+        non_final_next_states = non_final_next_states.to(self.device)
 
-        state_batch = torch.cat(batch.state, dim=0)
-        action_batch = torch.cat(batch.action)
-        reward_batch = torch.cat(batch.reward)
-        if self.use_gpu is True:
-            state_batch = state_batch.cuda()
-            action_batch = action_batch.cuda()
-            reward_batch = reward_batch.cuda()
-        state_batch = Variable(state_batch)
+        state_batch = torch.cat(batch.state, dim=0).to(self.device)
+        action_batch = torch.cat(batch.action).to(self.device)
+        reward_batch = torch.cat(batch.reward).to(self.device)
 
         # Compute Q(s_t, a) - the model computes Q(s_t), then we select the
         # columns of actions taken
@@ -219,9 +189,7 @@ class AgentTrainer:
         )
 
         # Compute V(s_{t+1}) for all next states.
-        next_state_values = Variable(torch.zeros(self.params.batch_size))
-        if self.use_gpu is True:
-            next_state_values = next_state_values.cuda()
+        next_state_values = torch.zeros(self.params.batch_size, device=self.device)
         # next_state_values[non_final_mask] = self.target_network(non_final_next_states).max(1)[0].detach()
         next_state_values[non_final_mask] = (
             self.target_network(non_final_next_states)
@@ -262,12 +230,11 @@ class AgentTrainer:
         # Choose the action
         if random.random() < self.epsilon:
             action = self.env.action_space.sample()
-            action = Variable(torch.LongTensor([[action]]))
-            if self.use_gpu:
-                action = action.cuda()
+            action = torch.tensor([[action]], dtype=torch.int64, device=self.device)
         else:
             self.model.eval()
-            action = self.model(state).max(1)[1].view(1, 1)
+            with torch.no_grad():
+                action = self.model(state).max(1)[1].view(1, 1)
             self.model.train()
         return action
 
