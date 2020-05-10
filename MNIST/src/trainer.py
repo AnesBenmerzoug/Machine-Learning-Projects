@@ -1,7 +1,6 @@
 import torch
 import numpy as np
 import torch.optim as optim
-from torch.autograd import Variable
 from torch.nn import NLLLoss
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import RandomSampler
@@ -51,30 +50,15 @@ class MNISTTrainer:
 
         # Checking for GPU
         self.use_gpu = self.params.use_gpu and torch.cuda.is_available()
+        self.device = torch.device("cuda:0" if self.use_gpu else "cpu")
 
         # Initialize model
         self.model = MNIST_Network(self.params)
+        self.model.to(self.device)
 
         print(self.model)
 
         print("Number of parameters = {}".format(self.model.num_parameters()))
-
-        # Checking for GPU
-        self.use_gpu = self.params.use_gpu and torch.cuda.is_available()
-        if self.use_gpu is True:
-            print("Using GPU")
-            try:
-                self.model.cuda()
-            except RuntimeError:
-                print("Failed to find GPU. Using CPU instead")
-                self.use_gpu = False
-                self.model.cpu()
-            except UserWarning:
-                print("GPU is too old. Using CPU instead")
-                self.use_gpu = False
-                self.model.cpu()
-        else:
-            print("Using CPU")
 
         # Setup optimizer
         self.optimizer = self.optimizer_select()
@@ -106,7 +90,9 @@ class MNISTTrainer:
                 # Go through the test set
                 test_accuracy = self.test_epoch()
                 print(
-                    "In Epoch {}, Obtained Accuracy {:.2f}".format(epoch + 1, test_accuracy)
+                    "In Epoch {}, Obtained Accuracy {:.2f}".format(
+                        epoch + 1, test_accuracy
+                    )
                 )
                 if max_accuracy is None or max_accuracy < test_accuracy:
                     max_accuracy = test_accuracy
@@ -126,10 +112,7 @@ class MNISTTrainer:
                 print("Average Loss so far: {}".format(losses / batch_index))
             # Split data tuple
             inputs, labels = data
-            # Wrap it in Variables
-            if self.use_gpu is True:
-                inputs, labels = inputs.cuda(), labels.cuda()
-            inputs, labels = Variable(inputs), Variable(labels)
+            inputs, labels = inputs.to(self.device), labels.to(self.device)
             # Main Model Forward Step
             output = self.model(inputs)
             # Loss Computation
@@ -162,10 +145,7 @@ class MNISTTrainer:
         for data in self.testloader:
             # Split data tuple
             inputs, labels = data
-            # Wrap it in Variables
-            if self.use_gpu is True:
-                inputs, labels = inputs.cuda(), labels.cuda()
-            inputs, labels = Variable(inputs), Variable(labels)
+            inputs, labels = inputs.to(self.device), labels.to(self.device)
             # Forward step
             outputs = self.model(inputs)
             _, predicted = torch.max(outputs.data, dim=1)

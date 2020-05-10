@@ -1,5 +1,4 @@
 import torch
-from torch.autograd import Variable
 from torch.utils.data import DataLoader
 from torchvision.datasets import CIFAR10
 from torchvision.transforms import transforms
@@ -45,29 +44,16 @@ class CIFAR10Tester:
 
         # Checking for GPU
         self.use_gpu = self.params.use_gpu and torch.cuda.is_available()
+        self.device = torch.device("cuda:0" if self.use_gpu else "cpu")
 
         # Initialize model
         path = self.params.model_dir / "trained_model.pt"
         self.model = self.load_model(path, self.use_gpu)
+        self.model.to(self.device)
 
         print(self.model)
 
         print("Number of parameters = {}".format(self.model.num_parameters()))
-
-        if self.use_gpu is True:
-            print("Using GPU")
-            try:
-                self.model.cuda()
-            except RuntimeError:
-                print("Failed to find GPU. Using CPU instead")
-                self.use_gpu = False
-                self.model.cpu()
-            except UserWarning:
-                print("GPU is too old. Using CPU instead")
-                self.use_gpu = False
-                self.model.cpu()
-        else:
-            print("Using CPU")
 
     def test_model(self):
         self.model.eval()
@@ -79,10 +65,7 @@ class CIFAR10Tester:
         for data in self.testloader:
             # Split data tuple
             inputs, labels = data
-            # Wrap it in Variables
-            if self.use_gpu is True:
-                inputs, labels = inputs.cuda(), labels.cuda()
-            inputs, labels = Variable(inputs), Variable(labels)
+            inputs, labels = inputs.to(self.device), labels.to(self.device)
             # Forward step
             outputs = self.model(inputs)
             # Get Prediction from output
@@ -127,9 +110,7 @@ class CIFAR10Tester:
                 "%5s" % self.classes[labels[j]] for j in range(int(images.size(0)))
             ),
         )
-        if self.use_gpu is True:
-            images, labels = images.cuda(), labels.cuda()
-        images, labels = Variable(images), Variable(labels)
+        images, labels = images.to(self.device), labels.to(self.device)
         outputs = self.model(images)
         _, predicted = torch.max(outputs.data, 1)
         print(
