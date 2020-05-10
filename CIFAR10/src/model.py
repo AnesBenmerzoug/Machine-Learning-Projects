@@ -1,14 +1,13 @@
 import torch
 from torch.nn import Module, Linear, Conv2d, Sequential, ReLU, BatchNorm2d
 import torch.nn.functional as F
-from collections import namedtuple
 
 
 class CIFAR10_Network(Module):
-    r"""
-    A Deep Neural Network implementation inspired by the one described in the article:
+    """A Deep Neural Network implementation inspired by the one described in the article:
     "VERY DEEP CONVOLUTIONAL NETWORKS FOR LARGE-SCALE IMAGE RECOGNITION"
     """
+
     def __init__(self, params):
         super(CIFAR10_Network, self).__init__()
         # Module Parameters
@@ -26,48 +25,93 @@ class CIFAR10_Network(Module):
 
         # Conv + BN + Relu Layers
         self.ConvBNReLU1 = Sequential(
-            Conv2d(in_channels=conv1_in_size, out_channels=conv1_out_size, kernel_size=3, padding=1, stride=1),
+            Conv2d(
+                in_channels=conv1_in_size,
+                out_channels=conv1_out_size,
+                kernel_size=3,
+                padding=1,
+                stride=1,
+            ),
             BatchNorm2d(num_features=conv1_out_size),
             ReLU(inplace=True),
-            Conv2d(in_channels=conv1_out_size, out_channels=conv1_out_size, kernel_size=3, padding=1, stride=1),
+            Conv2d(
+                in_channels=conv1_out_size,
+                out_channels=conv1_out_size,
+                kernel_size=3,
+                padding=1,
+                stride=1,
+            ),
             BatchNorm2d(num_features=conv1_out_size),
-            ReLU(inplace=True)
+            ReLU(inplace=True),
         )
 
         self.ConvBNReLU2 = Sequential(
-            Conv2d(in_channels=conv1_out_size, out_channels=conv2_out_size, kernel_size=3, padding=1, stride=1),
+            Conv2d(
+                in_channels=conv1_out_size,
+                out_channels=conv2_out_size,
+                kernel_size=3,
+                padding=1,
+                stride=1,
+            ),
             BatchNorm2d(num_features=conv2_out_size),
             ReLU(inplace=True),
-            Conv2d(in_channels=conv2_out_size, out_channels=conv2_out_size, kernel_size=3, padding=1, stride=1),
+            Conv2d(
+                in_channels=conv2_out_size,
+                out_channels=conv2_out_size,
+                kernel_size=3,
+                padding=1,
+                stride=1,
+            ),
             BatchNorm2d(num_features=conv2_out_size),
-            ReLU(inplace=True)
+            ReLU(inplace=True),
         )
 
         self.ConvBNReLU3 = Sequential(
-            Conv2d(in_channels=conv2_out_size, out_channels=conv3_out_size, kernel_size=3, padding=1, stride=1),
+            Conv2d(
+                in_channels=conv2_out_size,
+                out_channels=conv3_out_size,
+                kernel_size=3,
+                padding=1,
+                stride=1,
+            ),
             BatchNorm2d(num_features=conv3_out_size),
             ReLU(inplace=True),
-            Conv2d(in_channels=conv3_out_size, out_channels=conv3_out_size, kernel_size=3, padding=1, stride=1),
+            Conv2d(
+                in_channels=conv3_out_size,
+                out_channels=conv3_out_size,
+                kernel_size=3,
+                padding=1,
+                stride=1,
+            ),
             BatchNorm2d(num_features=conv3_out_size),
             ReLU(inplace=True),
         )
 
         self.ConvBNReLU4 = Sequential(
-            Conv2d(in_channels=conv3_out_size, out_channels=conv4_out_size, kernel_size=3, padding=1, stride=1),
+            Conv2d(
+                in_channels=conv3_out_size,
+                out_channels=conv4_out_size,
+                kernel_size=3,
+                padding=1,
+                stride=1,
+            ),
             BatchNorm2d(num_features=conv4_out_size),
             ReLU(inplace=True),
-            Conv2d(in_channels=conv4_out_size, out_channels=conv4_out_size, kernel_size=3, padding=1, stride=1),
+            Conv2d(
+                in_channels=conv4_out_size,
+                out_channels=conv4_out_size,
+                kernel_size=3,
+                padding=1,
+                stride=1,
+            ),
             BatchNorm2d(num_features=conv4_out_size),
             ReLU(inplace=True),
         )
 
         # Fully Connected Layers
-        self.fc1 = Linear(in_features=2 * 2 * conv4_out_size,
-                          out_features=fc1_out_size)
-        self.fc2 = Linear(in_features=fc1_out_size,
-                          out_features=fc2_out_size)
-        self.output_layer = Linear(in_features=fc2_out_size,
-                                   out_features=output_size)
+        self.fc1 = Linear(in_features=2 * 2 * conv4_out_size, out_features=fc1_out_size)
+        self.fc2 = Linear(in_features=fc1_out_size, out_features=fc2_out_size)
+        self.output_layer = Linear(in_features=fc2_out_size, out_features=output_size)
 
         # Initialize Parameters
         self.initialize_parameters()
@@ -103,11 +147,9 @@ class CIFAR10_Network(Module):
         return num
 
     @classmethod
-    def load_model(cls, package, useGPU=False):
-        parameters = package['params']
-        params = namedtuple('Parameters', (parameters.keys()))(*parameters.values())
-        model = cls(params)
-        model.load_state_dict(package['state_dict'])
-        if useGPU is True:
+    def load_model(cls, package, parameters, use_gpu=False):
+        model = cls(parameters)
+        model.load_state_dict(package["state_dict"])
+        if use_gpu is True:
             model = model.cuda()
         return model
