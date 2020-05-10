@@ -10,20 +10,19 @@ class Parameters:
     image_size = [28, 28]
     hidden_size = 64
     output_size = 10
-    batch_size = 256
     model_dir = Path("./trained_models/")
     # Dataset Parameters
     dataset_dir = Path("./data/")
     num_workers = 2
     # Training Parameters
     num_epochs = 1000
+    batch_size = 256
     max_norm = 400
     # Optimizer Parameters
     optimizer = "Adam"
     learning_rate = 1.0e-3
     momentum = 0.9
     nesterov = True
-    update_frequency = 2
 
 
 @click.command()

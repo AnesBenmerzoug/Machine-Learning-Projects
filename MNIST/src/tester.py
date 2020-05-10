@@ -39,7 +39,7 @@ class MNISTTester:
 
         # Load Trained Model
         path = self.params.model_dir / "trained_model.pt"
-        self.load_model(path, self.use_gpu)
+        self.model = self.load_model(path, self.use_gpu)
 
         print(self.model)
 
@@ -131,4 +131,4 @@ class MNISTTester:
 
     def load_model(self, path, use_gpu=False):
         package = torch.load(path, map_location=lambda storage, loc: storage)
-        self.model = MNIST_Network.load_model(package, self.params, use_gpu)
+        return MNIST_Network.load_model(package, self.params, use_gpu)

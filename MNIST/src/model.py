@@ -1,12 +1,10 @@
 import torch
 from torch.nn import Module, Linear, LSTM
 import torch.nn.functional as F
-from collections import namedtuple
 
 
 class MNIST_Network(Module):
-    r"""
-    A Deep Neural Network implementation that contains a vertical and a horizontal BLSTM layers to scan the image
+    """A Deep Neural Network implementation that contains a vertical and a horizontal BLSTM layers to scan the image
     and a fully connected layer that will use their outputs to generate the class conditional probability
     using a softmax non-linearity
     """

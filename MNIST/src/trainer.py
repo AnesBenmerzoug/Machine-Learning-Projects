@@ -87,29 +87,32 @@ class MNISTTrainer:
         best_model = None
         avg_losses = np.zeros(self.params.num_epochs)
         for epoch in range(self.params.num_epochs):
-            print("Epoch {}".format(epoch + 1))
+            try:
+                print("Epoch {}".format(epoch + 1))
 
-            print("Learning Rate= {}".format(self.optimizer.param_groups[0]["lr"]))
+                print("Learning Rate= {}".format(self.optimizer.param_groups[0]["lr"]))
 
-            # Set mode to training
-            self.model.train()
+                # Set mode to training
+                self.model.train()
 
-            # Go through the training set
-            avg_losses[epoch] = self.train_epoch()
+                # Go through the training set
+                avg_losses[epoch] = self.train_epoch()
 
-            print("Average loss= {:.3f}".format(avg_losses[epoch]))
+                print("Average loss= {:.3f}".format(avg_losses[epoch]))
 
-            # Switch to eval and go through the test set
-            self.model.eval()
+                # Switch to eval and go through the test set
+                self.model.eval()
 
-            # Go through the test set
-            test_accuracy = self.test_epoch()
-            print(
-                "In Epoch {}, Obtained Accuracy {:.2f}".format(epoch + 1, test_accuracy)
-            )
-            if max_accuracy is None or max_accuracy < test_accuracy:
-                max_accuracy = test_accuracy
-                best_model = self.model.state_dict()
+                # Go through the test set
+                test_accuracy = self.test_epoch()
+                print(
+                    "In Epoch {}, Obtained Accuracy {:.2f}".format(epoch + 1, test_accuracy)
+                )
+                if max_accuracy is None or max_accuracy < test_accuracy:
+                    max_accuracy = test_accuracy
+                    best_model = self.model.state_dict()
+            except KeyboardInterrupt:
+                print("Training Interrupted")
         # Saving trained model
         self.save_model(best_model)
         return avg_losses
