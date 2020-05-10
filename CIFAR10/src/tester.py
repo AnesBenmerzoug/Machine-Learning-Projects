@@ -8,7 +8,7 @@ from src.utils import imgshow
 import random
 
 
-class CIFAR10Tester(object):
+class CIFAR10Tester:
     def __init__(self, parameters):
         self.params = parameters
         self.classes = (

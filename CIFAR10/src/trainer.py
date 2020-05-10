@@ -9,10 +9,9 @@ from torch.nn.utils import clip_grad_norm
 from torchvision.datasets import CIFAR10
 from torchvision.transforms import transforms
 from src.model import CIFAR10_Network
-import os
 
 
-class CIFAR10Trainer(object):
+class CIFAR10Trainer:
     def __init__(self, parameters):
         self.params = parameters
 
@@ -107,7 +106,8 @@ class CIFAR10Trainer(object):
                     max_accuracy = test_accuracy
                     best_model = self.model.state_dict()
             except KeyboardInterrupt:
-                print("Training interrupted")
+                print("Training was interrupted")
+                break
         # Saving trained model
         self.save_model(best_model)
         return avg_losses

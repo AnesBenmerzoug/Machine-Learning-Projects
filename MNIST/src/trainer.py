@@ -112,7 +112,8 @@ class MNISTTrainer:
                     max_accuracy = test_accuracy
                     best_model = self.model.state_dict()
             except KeyboardInterrupt:
-                print("Training Interrupted")
+                print("Training was interrupted")
+                break
         # Saving trained model
         self.save_model(best_model)
         return avg_losses
