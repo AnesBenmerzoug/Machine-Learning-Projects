@@ -1,0 +1,7 @@
+torch==1.5
+torchvision
+gym
+numpy
+matplotlib
+moviepy
+click

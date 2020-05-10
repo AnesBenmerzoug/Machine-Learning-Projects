@@ -7,13 +7,11 @@ import torchvision.transforms as T
 
 class CartPoleEnvironment:
     def __init__(self, parameters):
-        self.env = gym.make('CartPole-v0').unwrapped
+        self.env = gym.make("CartPole-v1").unwrapped
         self.params = parameters
-        self.resize = T.Compose([
-            T.ToPILImage(),
-            T.Resize(40, interpolation=Image.CUBIC),
-            T.ToTensor()
-        ])
+        self.resize = T.Compose(
+            [T.ToPILImage(), T.Resize(40, interpolation=Image.CUBIC), T.ToTensor()]
+        )
         self.frame_width = 600
 
     def get_cart_location(self):
@@ -22,7 +20,7 @@ class CartPoleEnvironment:
         return int(self.env.state[0] * scale + self.frame_width / 2.0)  # MIDDLE OF CART
 
     def get_frame(self):
-        original_frame = self.render(mode='rgb_array')
+        original_frame = self.render(mode="rgb_array")
         frame = original_frame.transpose((2, 0, 1))  # transpose into torch order (CHW)
         # Strip off the top and bottom of the frame
         frame = frame[:, 160:320]
@@ -33,8 +31,9 @@ class CartPoleEnvironment:
         elif cart_location > (self.frame_width - view_width // 2):
             slice_range = slice(-view_width, None)
         else:
-            slice_range = slice(cart_location - view_width // 2,
-                                cart_location + view_width // 2)
+            slice_range = slice(
+                cart_location - view_width // 2, cart_location + view_width // 2
+            )
         # Strip off the edges, so that we have a square image centered on a cart
         frame = frame[:, :, slice_range]
         # Convert to float, rescare, convert to torch tensor
@@ -47,7 +46,7 @@ class CartPoleEnvironment:
     def step(self, action):
         return self.env.step(action)
 
-    def render(self, mode='human'):
+    def render(self, mode="human"):
         return self.env.render(mode)
 
     def reset(self):

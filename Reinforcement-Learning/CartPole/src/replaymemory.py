@@ -2,15 +2,14 @@ import random
 
 
 class ReplayMemory(object):
-    def __init__(self, parameters, transition):
-        self.params = parameters
-        self.capacity = self.params.replayMemoryCapacity
+    def __init__(self, replay_memory_capacity, transition):
+        self.capacity = replay_memory_capacity
         self.transition = transition
         self.memory = []
         self.position = 0
 
     def push(self, *args):
-        r"""Saves a transition."""
+        """Saves a transition."""
         if len(self.memory) < self.capacity:
             self.memory.append(None)
         self.memory[self.position] = self.transition(*args)

@@ -7,7 +7,7 @@ from .utils import save_animation
 import random
 
 
-class AgentTester(object):
+class AgentTester:
     def __init__(self, parameters):
         self.params = parameters
 
@@ -15,13 +15,15 @@ class AgentTester(object):
         self.env = CartPoleEnvironment(self.params)
 
         # Define the transitions
-        self.transition = namedtuple('Transition',
-                                     ('state', 'action', 'next_state', 'reward'))
+        self.transition = namedtuple(
+            "Transition", ("state", "action", "next_state", "reward")
+        )
         # Checking for GPU
-        self.useGPU = self.params.useGPU and torch.cuda.is_available()
+        self.use_gpu = self.params.use_gpu and torch.cuda.is_available()
 
         # Load Trained Model
-        self.load_model(self.env.action_space.n)
+        path = self.params.model_dir / "trained_model.pt"
+        self.model = self.load_model(path, self.env.action_space.n)
 
         self.model.eval()
 
@@ -29,17 +31,17 @@ class AgentTester(object):
 
         print("Number of parameters = {}".format(self.model.num_parameters()))
 
-        if self.useGPU is True:
+        if self.use_gpu is True:
             print("Using GPU")
             try:
                 self.model.cuda()
             except RuntimeError:
                 print("Failed to find GPU. Using CPU instead")
-                self.useGPU = False
+                self.use_gpu = False
                 self.model.cpu()
             except UserWarning:
                 print("GPU is too old. Using CPU instead")
-                self.useGPU = False
+                self.use_gpu = False
                 self.model.cpu()
         else:
             print("Using CPU")
@@ -60,12 +62,12 @@ class AgentTester(object):
             duration += 1
             self.env.render()
             # Wrap the state in a Variable
-            if self.useGPU is True:
+            if self.use_gpu is True:
                 state = state.cuda()
             state = Variable(state, volatile=True)
             # Select and perform an action
             action = self.select_action(state)
-            _, _, done, _ = self.env.step(action.data[0, 0])
+            _, _, done, _ = self.env.step(action.item())
 
             # Observe new state
             last_screen = current_screen
@@ -79,7 +81,7 @@ class AgentTester(object):
             # Move to the next state
             state = next_state
         print("Duration = {}".format(duration))
-        save_animation('static', screens, 24)
+        save_animation("static", screens, 24)
         # Close the environment
         self.env.close()
 
@@ -92,9 +94,6 @@ class AgentTester(object):
             action = self.model(state).max(1)[1].view(1, 1)
         return action
 
-    def load_model(self, num_actions, useGPU=False):
-        package = torch.load(self.params.testModelPath, map_location=lambda storage, loc: storage)
-        self.model = DQN.load_model(package, num_actions, useGPU)
-        parameters = package['params']
-        self.params = namedtuple('Parameters', (parameters.keys()))(*parameters.values())
-
+    def load_model(self, path, num_actions):
+        package = torch.load(path, map_location=lambda storage, loc: storage)
+        return DQN.load_model(package, num_actions)
