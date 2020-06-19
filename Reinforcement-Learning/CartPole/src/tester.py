@@ -1,83 +1,76 @@
+import time
 import torch
-from .agent import DQN
-from collections import namedtuple
-from .environment import CartPoleEnvironment
 from .utils import save_animation
-import random
+import logging
+
+import gym
+from .agent import AgentNetwork
+from .environment import cartpole_pixel_env_creator
+
+import ray
+from ray import tune
+from ray.rllib.agents.dqn import DQNTrainer
+from ray.rllib.models.catalog import ModelCatalog
+from ray.tune.registry import register_env
+from loguru import logger
+
+custom_env_name = "CartPole-Pixel"
+
+register_env(custom_env_name, cartpole_pixel_env_creator)
 
 
 class AgentTester:
     def __init__(self, parameters):
         self.params = parameters
 
-        # Initialize environment
-        self.env = CartPoleEnvironment(self.params)
-
-        # Define the transitions
-        self.transition = namedtuple(
-            "Transition", ("state", "action", "next_state", "reward")
-        )
         # Checking for GPU
         self.use_gpu = self.params.use_gpu and torch.cuda.is_available()
         self.device = torch.device("cuda:0" if self.use_gpu else "cpu")
 
-        # Load Trained Model
-        path = self.params.model_dir / "trained_model.pt"
-        self.model = self.load_model(path, self.env.action_space.n)
-        self.model.eval()
-        self.model.to(self.device)
+        # Register model
+        ModelCatalog.register_custom_model("agent_network", AgentNetwork)
 
-        print(self.model)
+        # Get environment
+        self.env = cartpole_pixel_env_creator({"shape": (40, 60, 3)})
 
-        print("Number of parameters = {}".format(self.model.num_parameters()))
+        self.config = {
+            "model": {
+                "custom_model": "agent_network",
+                "custom_options": {"shape": (40, 60, 3), "dueling": True,},
+            },
+            "env": custom_env_name,
+            "env_config": {"shape": (40, 60, 3)},
+            "lr": self.params.learning_rate,
+            "train_batch_size": self.params.batch_size,
+            "num_workers": self.params.num_workers,
+            "num_gpus": self.use_gpu,
+            "use_pytorch": True,
+            "log_level": logging.INFO,
+        }
 
     def test_model(self):
-        self.model.eval()
-        # Initialize list to hold screens
-        screens = []
-        # Initialize the environment and state
-        self.env.reset()
-        last_screen, _ = self.env.get_frame()
-        current_screen, original_screen = self.env.get_frame()
-        screens.append(original_screen)
-        state = current_screen - last_screen
-        state = state.to(self.device)
-        done = False
-        duration = 0
-        while True:
-            duration += 1
-            self.env.render()
-            # Select and perform an action
-            action = self.select_action(state)
-            _, _, done, _ = self.env.step(action.item())
-
-            # Observe new state
-            last_screen = current_screen
-            current_screen, original_screen = self.env.get_frame()
-            screens.append(original_screen)
-
-            if done:
+        ray.init(logging_level=logging.INFO, ignore_reinit_error=True)
+        agent = DQNTrainer(self.config, env=custom_env_name)
+        state_dict = torch.load(
+            self.params.model_dir / "trained_model.pt",
+            map_location=lambda storage, loc: storage,
+        )
+        agent.get_policy().model.load_state_dict(state_dict)
+        rewards = []
+        for i in range(self.params.num_testing_episodes):
+            try:
+                logger.info("Iteration: {}", i)
+                state = self.env.reset()
+                done = False
+                cumulative_reward = 0
+                while not done:
+                    action = agent.compute_action(state)
+                    state, reward, done, _ = self.env.step(action)
+                    cumulative_reward += reward
+                    time.sleep(0.05)
+                logger.info("Reward: {}", cumulative_reward)
+                rewards.append(cumulative_reward)
+            except KeyboardInterrupt:
+                logger.info("Testing was interrupted")
                 break
-
-            next_state = current_screen - last_screen
-            next_state = next_state.to(self.device)
-
-            # Move to the next state
-            state = next_state
-        print("Duration = {}".format(duration))
-        save_animation("static", screens, 24)
-        # Close the environment
-        self.env.close()
-
-    def select_action(self, state):
-        # Choose the action
-        if random.random() < 0.05:
-            action = self.env.action_space.sample()
-            action = torch.tensor([[action]], dtype=torch.int64, device=self.device)
-        else:
-            action = self.model(state).max(1)[1].view(1, 1)
-        return action
-
-    def load_model(self, path, num_actions):
-        package = torch.load(path, map_location=lambda storage, loc: storage)
-        return DQN.load_model(package, num_actions)
+        return rewards

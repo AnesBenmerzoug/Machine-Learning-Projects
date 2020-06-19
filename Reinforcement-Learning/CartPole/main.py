@@ -4,35 +4,24 @@ import time
 
 import click
 
-from src import *
+from src import AgentTrainer, AgentTester, plot_box
 
 
 class Parameters:
     # Model Parameters
-    model_dir = Path("./trained_models/")
-    # Replay Memory Parameters
-    replay_memory_capacity = 10000
-    # Epsilon Greedy Policy Parameters
-    epsilon_start = 1.0
-    epsilon_end = 0.05
-    epsilon_decay = 500
+    model_dir = Path("./trained_models/").absolute()
     # Dataset Parameters
-    dataset_dir = Path("./data/")
     num_workers = 2
     # Training Parameters
-    num_episodes = 1000
-    num_steps_per_episode = 1000
-    gamma = 0.999
-    target_update = 50
-    batch_size = 64
+    max_num_iterations = 1000
+    max_num_timeteps = 100000
+    target_episode_reward_mean = 100
+    timesteps_per_iteration = 500
+    batch_size = 16
     # Optimizer Parameters
-    optimizer = "Adam"
-    learning_rate = 1.0e-3
-    momentum = 0.9
-    nesterov = True
-    # Scheduler Parameters
-    decay_coeff = 0.5
-    step_size = 1000
+    learning_rate = 5e-4
+    # Testing Parameters
+    num_testing_episodes = 100
 
 
 @click.command()
@@ -48,29 +37,15 @@ def main(train: bool, gpu: bool):
     Parameters.use_gpu = gpu
 
     if Parameters.train_model is True:
-        # Instantiating the trainer
-        trainer = AgentTrainer(Parameters)
         # Training the model
-        avg_losses, episode_durations = trainer.train_model()
-        # Plot losses
-        plotlosses(
-            avg_losses,
-            title="Average Loss per Episode",
-            xlabel="Episode",
-            ylabel="Average Loss",
-        )
-        # Plot durations
-        plotlosses(
-            episode_durations,
-            title="Episode Durations",
-            xlabel="Episode",
-            ylabel="Duration",
-        )
+        trainer = AgentTrainer(Parameters)
+        trainer.train_model()
 
-    # Instantiating the test
+    # Testing the trained model
     tester = AgentTester(Parameters)
     # Testing the policy
-    tester.test_model()
+    rewards = tester.test_model()
+    plot_box(rewards)
 
     print("Finishing time: {}".format(time.asctime()))
 

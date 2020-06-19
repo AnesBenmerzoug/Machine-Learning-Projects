@@ -1,7 +1,9 @@
 torch==1.5
 torchvision
 gym
+ray[rllib, debug]==0.8.5
 numpy
 matplotlib
 moviepy
 click
+loguru
