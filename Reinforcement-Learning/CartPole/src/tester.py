@@ -51,11 +51,11 @@ class AgentTester:
     def test_model(self):
         ray.init(logging_level=logging.INFO, ignore_reinit_error=True)
         agent = DQNTrainer(self.config, env=custom_env_name)
-        state_dict = torch.load(
+        weights = torch.load(
             self.params.model_dir / "trained_model.pt",
             map_location=lambda storage, loc: storage,
         )
-        agent.get_policy().model.load_state_dict(state_dict)
+        agent.set_weights(weights)
         rewards = []
         for i in range(self.params.num_testing_episodes):
             try:
@@ -73,4 +73,5 @@ class AgentTester:
             except KeyboardInterrupt:
                 logger.info("Testing was interrupted")
                 break
+        ray.shutdown()
         return rewards

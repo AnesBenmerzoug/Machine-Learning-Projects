@@ -1,17 +1,21 @@
-import torch
-from .agent import AgentNetwork
-from .environment import cartpole_pixel_env_creator
+from functools import partial
 import logging
 from loguru import logger
+
+from .agent import AgentNetwork
+from .environment import cartpole_pixel_env_creator
+from .callback import TorchModelStoreCallbacks
 
 import ray
 from ray import tune
 from ray.rllib.agents.dqn import DQNTrainer
 from ray.rllib.models.catalog import ModelCatalog
 from ray.tune.registry import register_env
+import torch
 
 custom_env_name = "CartPole-Pixel"
 
+# Register the custom environment
 register_env(custom_env_name, cartpole_pixel_env_creator)
 
 
@@ -26,13 +30,18 @@ class AgentTrainer:
         # Register model
         ModelCatalog.register_custom_model("agent_network", AgentNetwork)
 
+        # Training configuration
         self.config = {
             "model": {
                 "custom_model": "agent_network",
                 "custom_options": {"shape": (40, 60, 3), "dueling": True,},
             },
             "env": custom_env_name,
-            "env_config": {"shape": (40, 60, 3),},
+            "env_config": {"shape": (40, 60, 3)},
+            "callbacks": partial(
+                TorchModelStoreCallbacks,
+                model_path=self.params.model_dir / "trained_model.pt",
+            ),
             "lr": self.params.learning_rate,
             "train_batch_size": self.params.batch_size,
             "num_workers": self.params.num_workers,
@@ -41,6 +50,7 @@ class AgentTrainer:
             "log_level": logging.INFO,
         }
 
+        # Stopping conditions
         self.stop_conditions = {
             "training_iteration": self.params.max_num_iterations,
             "timesteps_total": self.params.max_num_timeteps,
@@ -50,34 +60,12 @@ class AgentTrainer:
     def train_model(self):
         ray.init(logging_level=logging.INFO)
         logger.info("Starting training")
-        tune.run(
-            self._train_function,
+        trials = tune.run(
+            DQNTrainer,
             config=self.config,
             stop=self.stop_conditions,
             verbose=1,
+            return_trials=True,
         )
         logger.info("Finished training")
-
-    def _train_function(self, config: dict, reporter):
-        trainer = DQNTrainer(env=custom_env_name, config=config)
-        logger.info(f"model summary: \n {trainer.get_policy().model}")
-        for i in range(1, self.params.max_num_iterations):
-            try:
-                logger.info(f"Iteration {i}")
-                result = trainer.train()
-                reporter(**result)
-                if i % 10 == 0:
-                    logger.info(f"Model checkpoint at iteration {i}")
-                    model = trainer.get_policy().model
-                    torch.save(
-                        model.state_dict(), self.params.model_dir / "trained_model.pt",
-                    )
-            except KeyboardInterrupt:
-                print("Training was interrupted")
-                break
-        logger.info("Saving model at end of worker training")
-        model = trainer.get_policy().model
-        torch.save(
-            model.state_dict(), self.params.model_dir / "trained_model.pt",
-        )
-        trainer.stop()
+        return trials

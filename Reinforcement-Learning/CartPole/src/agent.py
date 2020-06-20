@@ -1,11 +1,11 @@
+import torch
 import torch.nn as nn
 from ray.rllib.agents.dqn.dqn_torch_model import DQNTorchModel
 from ray.rllib.models.torch.torch_modelv2 import TorchModelV2
 from ray.rllib.utils.annotations import override
+from loguru import logger
 
-
-screen_width = 600
-screen_height = 400
+torch.autograd.set_detect_anomaly(True)
 
 
 class AgentNetwork(DQNTorchModel, nn.Module):
@@ -26,40 +26,35 @@ class AgentNetwork(DQNTorchModel, nn.Module):
         self.module.add_module(
             "conv_1", nn.Conv2d(in_channels, 16, kernel_size=5, stride=2)
         )
-        # Followed by Relu activation
         self.module.add_module("relu_1", nn.ReLU())
-        # Second Convolutional layer
         self.module.add_module("conv_2", nn.Conv2d(16, 16, kernel_size=5, stride=2))
-        # Followed by Relu activation
         self.module.add_module("relu_2", nn.ReLU())
-        # Followed by Relu activation
-        self.module.add_module("relu_2", nn.ReLU())
-        # Layer to flatten output from convolutional layer
         self.module.add_module("flatten", Flatten())
-        # Fully Connected output layer
         self.module.add_module(
             "output", nn.Linear(in_features=1344, out_features=num_outputs)
         )
+
+        self.prev_output_module = nn.Sequential()
+        self.prev_output_module.add_module(
+            "fc", nn.Linear(in_features=num_outputs, out_features=num_outputs)
+        )
+        self.prev_output_module.add_module("relu", nn.ReLU())
+
+        self.prev_output = None
 
     @override(TorchModelV2)
     def forward(self, input_dict, state, seq_lens):
         inputs = input_dict["obs"]["pixels"]
         inputs = inputs.permute(0, 3, 1, 2)
-        output = self.module(inputs)
-        return output, state
-
-    @property
-    def num_parameters(self):
-        num = 0
-        for weight in self.parameters():
-            num = num + weight.numel()
-        return num
-
-    @classmethod
-    def load_model(cls, package, num_actions):
-        model = cls(num_actions)
-        model.load_state_dict(package["state_dict"])
-        return model
+        output_1 = self.module(inputs)
+        if self.prev_output is None:
+            self.prev_output = output_1.clone().zero_()
+        else:
+            self.prev_output = self.prev_output.detach()
+        output_2 = self.prev_output_module(self.prev_output)
+        final_output = output_1 + output_2
+        self.prev_output = output_1.clone()
+        return final_output, state
 
 
 class Flatten(nn.Module):
