@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
-import moviepy.editor as mpy
+import us\
+    gi.editor as mpy
 import os
 
 

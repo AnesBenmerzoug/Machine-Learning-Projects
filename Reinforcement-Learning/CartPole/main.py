@@ -13,16 +13,16 @@ class Parameters:
     # Dataset Parameters
     num_workers = 2
     # Training Parameters
-    max_num_iterations = 500
-    max_num_timeteps = 2000000
-    target_episode_reward_mean = 500
-    timesteps_per_iteration = 1000
+    max_num_iterations = 2001
+    max_num_timeteps = 10000000
+    target_episode_reward = 100
+    timesteps_per_iteration = 2000
     replay_buffer_size = 10000
     batch_size = 32
     # Optimizer Parameters
     learning_rate = 5e-4
     # Testing Parameters
-    num_testing_episodes = 100
+    num_testing_episodes = 250
 
 
 @click.command()

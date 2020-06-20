@@ -60,7 +60,7 @@ class AgentTrainer:
         self.stop_conditions = {
             "training_iteration": self.params.max_num_iterations,
             "timesteps_total": self.params.max_num_timeteps,
-            "episode_reward_mean": self.params.target_episode_reward_mean,
+            "episode_reward_min": self.params.target_episode_reward,
         }
 
     def train_model(self):

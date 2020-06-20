@@ -69,13 +69,14 @@ class AgentTester:
                     screen = self.env.render(mode="rgb_array")
                     screens.append(screen)
                     cumulative_reward += reward
-                    time.sleep(0.05)
-                logger.info("Reward: {}", cumulative_reward)
+                    time.sleep(0.01)
+                logger.info("Iteration: {}, Reward: {}", i, cumulative_reward)
                 rewards.append(cumulative_reward)
             except KeyboardInterrupt:
                 logger.info("Testing was interrupted")
                 break
             if len(screens) > len(longest_screens):
                 longest_screens = screens
+        self.env.close()
         ray.shutdown()
         return rewards, longest_screens
