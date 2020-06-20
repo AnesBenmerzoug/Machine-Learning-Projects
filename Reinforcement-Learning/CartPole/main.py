@@ -4,7 +4,7 @@ import time
 import click
 from loguru import logger
 
-from src import AgentTrainer, AgentTester, plot_box
+from src import AgentTrainer, AgentTester, plot_box, save_animation
 
 
 class Parameters:
@@ -14,9 +14,10 @@ class Parameters:
     num_workers = 2
     # Training Parameters
     max_num_iterations = 500
-    max_num_timeteps = 1000000
-    target_episode_reward_mean = 100
+    max_num_timeteps = 2000000
+    target_episode_reward_mean = 500
     timesteps_per_iteration = 1000
+    replay_buffer_size = 10000
     batch_size = 32
     # Optimizer Parameters
     learning_rate = 5e-4
@@ -42,8 +43,11 @@ def main(train: bool, gpu: bool):
 
     # Testing the trained model
     tester = AgentTester(Parameters)
-    rewards = tester.test_model()
+    rewards, screens = tester.test_model()
     plot_box(rewards, title="Rewards")
+
+    # Store animation of longest test run as gif
+    save_animation("static", screens, fps=24)
 
     logger.info(f"Finishing time: {time.asctime()}")
 

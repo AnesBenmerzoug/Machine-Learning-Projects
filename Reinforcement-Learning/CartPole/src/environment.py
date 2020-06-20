@@ -1,9 +1,10 @@
 import gym
 from gym import spaces
 from gym.wrappers.pixel_observation import PixelObservationWrapper
+from gym.wrappers.flatten_observation import FlattenObservation
+from gym.wrappers.frame_stack import FrameStack
 import numpy as np
 import collections
-from typing import Optional
 
 
 class ResizePixelObservationWrapper(gym.ObservationWrapper):
@@ -50,14 +51,14 @@ class ResizePixelObservationWrapper(gym.ObservationWrapper):
         return new_observation
 
 
-def cartpole_pixel_env_creator(env_config: Optional[dict] = None):
-    if env_config is None:
-        env_config = dict()
+def cartpole_pixel_env_creator(env_config: dict):
     env = gym.make("CartPole-v1").unwrapped
     env.reset()
-    env = PixelObservationWrapper(env, render_kwargs={"mode": "rgb_array"})
-    env.reset()
+    env = PixelObservationWrapper(
+        env, pixels_only=True, render_kwargs={"mode": "rgb_array"}
+    )
     env = ResizePixelObservationWrapper(env, shape=env_config["shape"])
-    env.reset()
+    env = FlattenObservation(env)
+    env = FrameStack(env, num_stack=env_config["num_stack"])
     env.close()
     return env

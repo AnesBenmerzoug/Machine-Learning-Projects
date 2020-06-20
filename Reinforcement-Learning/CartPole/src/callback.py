@@ -15,6 +15,7 @@ class TorchModelStoreCallbacks(DefaultCallbacks):
 
     def on_train_result(self, trainer, result: dict, **kwargs):
         iteration = result["training_iteration"]
+        logger.info(f"Iteration {iteration}")
         if iteration % 10 == 0:
             logger.info(f"Model checkpoint at iteration {iteration}")
             torch.save(trainer.get_weights()["default_policy"], self.model_path)

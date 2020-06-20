@@ -31,17 +31,15 @@ class AgentTester:
         ModelCatalog.register_custom_model("agent_network", AgentNetwork)
 
         # Get environment
-        self.env = cartpole_pixel_env_creator({"shape": (40, 60, 3)})
+        self.env = cartpole_pixel_env_creator({"shape": (40, 60, 3), "num_stack": 4},)
 
         self.config = {
             "model": {
                 "custom_model": "agent_network",
-                "custom_options": {"shape": (40, 60, 3), "dueling": True,},
+                "custom_options": {"shape": (40, 60, 3), "num_stack": 4},
             },
             "env": custom_env_name,
-            "env_config": {"shape": (40, 60, 3)},
-            "lr": self.params.learning_rate,
-            "train_batch_size": self.params.batch_size,
+            "env_config": {"shape": (40, 60, 3), "num_stack": 4},
             "num_workers": self.params.num_workers,
             "num_gpus": self.use_gpu,
             "use_pytorch": True,
@@ -55,9 +53,11 @@ class AgentTester:
             self.params.model_dir / "trained_model.pt",
             map_location=lambda storage, loc: storage,
         )
-        agent.set_weights(weights)
+        agent.set_weights({"default_policy": weights})
         rewards = []
+        longest_screens = []
         for i in range(self.params.num_testing_episodes):
+            screens = []
             try:
                 logger.info("Iteration: {}", i)
                 state = self.env.reset()
@@ -66,6 +66,8 @@ class AgentTester:
                 while not done:
                     action = agent.compute_action(state)
                     state, reward, done, _ = self.env.step(action)
+                    screen = self.env.render(mode="rgb_array")
+                    screens.append(screen)
                     cumulative_reward += reward
                     time.sleep(0.05)
                 logger.info("Reward: {}", cumulative_reward)
@@ -73,5 +75,7 @@ class AgentTester:
             except KeyboardInterrupt:
                 logger.info("Testing was interrupted")
                 break
+            if len(screens) > len(longest_screens):
+                longest_screens = screens
         ray.shutdown()
-        return rewards
+        return rewards, longest_screens
