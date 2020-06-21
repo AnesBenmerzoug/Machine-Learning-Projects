@@ -47,7 +47,7 @@ def main(train: bool, gpu: bool):
     plot_box(rewards, title="Rewards")
 
     # Store animation of longest test run as gif
-    save_animation("static", screens, fps=24)
+    save_animation("animation.gif", screens, fps=24)
 
     logger.info(f"Finishing time: {time.asctime()}")
 

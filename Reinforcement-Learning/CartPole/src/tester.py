@@ -1,18 +1,20 @@
 import time
-import torch
-from .utils import save_animation
 import logging
+from typing import TYPE_CHECKING
 
-import gym
 from .agent import AgentNetwork
 from .environment import cartpole_pixel_env_creator
 
 import ray
-from ray import tune
 from ray.rllib.agents.dqn import DQNTrainer
 from ray.rllib.models.catalog import ModelCatalog
 from ray.tune.registry import register_env
+import torch
 from loguru import logger
+
+
+if TYPE_CHECKING:
+    from typing import Tuple, List
 
 custom_env_name = "CartPole-Pixel"
 
@@ -46,7 +48,7 @@ class AgentTester:
             "log_level": logging.INFO,
         }
 
-    def test_model(self):
+    def test_model(self) -> Tuple[List[float], list]:
         ray.init(logging_level=logging.INFO, ignore_reinit_error=True)
         agent = DQNTrainer(self.config, env=custom_env_name)
         weights = torch.load(

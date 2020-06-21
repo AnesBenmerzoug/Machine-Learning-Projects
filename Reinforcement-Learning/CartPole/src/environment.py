@@ -1,14 +1,25 @@
+import collections
+from typing import TYPE_CHECKING
+
 import gym
 from gym import spaces
 from gym.wrappers.pixel_observation import PixelObservationWrapper
 from gym.wrappers.flatten_observation import FlattenObservation
 from gym.wrappers.frame_stack import FrameStack
 import numpy as np
-import collections
+
+
+if TYPE_CHECKING:
+    from typing import Union, Tuple
 
 
 class ResizePixelObservationWrapper(gym.ObservationWrapper):
-    def __init__(self, env, shape, pixel_key: str = "pixels"):
+    def __init__(
+        self,
+        env: "Union[gym.Env, gym.Wrapper]",
+        shape: "Union[int, Tuple[int, ...]]",
+        pixel_key: str = "pixels",
+    ):
         super().__init__(env)
         if isinstance(shape, int):
             shape = (shape, shape)

@@ -1,6 +1,7 @@
 from functools import partial
 import logging
 from loguru import logger
+from typing import TYPE_CHECKING
 
 from .agent import AgentNetwork
 from .environment import cartpole_pixel_env_creator
@@ -12,6 +13,9 @@ from ray.rllib.agents.dqn import DQNTrainer
 from ray.rllib.models.catalog import ModelCatalog
 from ray.tune.registry import register_env
 import torch
+
+if TYPE_CHECKING:
+    from ray.tune import ExperimentAnalysis
 
 custom_env_name = "CartPole-Pixel"
 
@@ -63,7 +67,7 @@ class AgentTrainer:
             "episode_reward_min": self.params.target_episode_reward,
         }
 
-    def train_model(self):
+    def train_model(self) -> "ExperimentAnalysis":
         ray.init(logging_level=logging.INFO)
         logger.info("Starting training")
         trials = tune.run(

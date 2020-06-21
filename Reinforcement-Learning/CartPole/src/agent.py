@@ -1,7 +1,14 @@
-import torch.nn as nn
+from typing import TYPE_CHECKING
+
 from ray.rllib.agents.dqn.dqn_torch_model import DQNTorchModel
 from ray.rllib.models.torch.torch_modelv2 import TorchModelV2
 from ray.rllib.utils.annotations import override
+import torch.nn as nn
+
+
+if TYPE_CHECKING:
+    from typing import Tuple, Optional
+    import torch
 
 
 class AgentNetwork(DQNTorchModel, nn.Module):
@@ -30,7 +37,9 @@ class AgentNetwork(DQNTorchModel, nn.Module):
         )
 
     @override(TorchModelV2)
-    def forward(self, input_dict, state, seq_lens):
+    def forward(
+        self, input_dict: dict, state: list, seq_lens: "Optional[float]" = None
+    ) -> "Tuple[torch.Tensor, list]":
         # Shape: (Batch, Depth, Height * Weight * Channels)
         inputs = input_dict["obs"]
         # Shape: (Batch, Depth, Channels, Height, Weight)
@@ -44,5 +53,5 @@ class AgentNetwork(DQNTorchModel, nn.Module):
 
 
 class Flatten(nn.Module):
-    def forward(self, input):
+    def forward(self, input: "torch.Tensor") -> "torch.Tensor":
         return input.reshape(input.size(0), -1)
